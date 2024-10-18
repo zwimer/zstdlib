@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zstdlib"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
+keywords = ["remote", "pipe"]
+license = {text = "GPLv3"}
+description = "A set of useful python utilities"
+urls = {Homepage = "https://github.com/zwimer/zstdlib"}
+requires-python = ">= 3.10"
+# dependencies = [
+#     # Client
+#     "zstandard[cffi]",
+#     "pycryptodomex",
+# 	"cryptography",
+#     "requests",
+#     "tqdm",
+#     # Server
+#     "waitress",
+#     "flask",
+#     # Both
+#     "human_readable",
+# ]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools.package-data]
+zstdlib = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "zstdlib.__version__"}
+
+# Tools
+
+[tool.pylint.MASTER]
+ignore-paths = '^tests/.*$'
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "unnecessary-lambda-assignment",
+    "method-cache-max-size-none",
+	"missing-module-docstring",
+	"too-few-public-methods",
+	"line-too-long",
+	"invalid-name"
+]
+
+[tool.black]
+line-length = 110
+target-version = ["py310", "py311", "py312", "py313"]
+
+[tool.ruff]
+line-length = 110
+[tool.ruff.lint]
+ignore=["E731"]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+[tool.bandit]
+skips = ["B101", "B104", "B201"]
+
+[tool.vulture]
+ignore_names = []
+min_confidence = 70
+paths = ["zstdlib"]
