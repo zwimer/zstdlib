@@ -75,6 +75,35 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f1.a
 
+    def test_metadata(self):
+        @frozen
+        class F2:
+            def __init__(self):
+                """
+                init doc
+                """
+
+        f2 = F2()
+        self.assertEqual(f2.__init__.__doc__.strip(), "init doc")
+        self.assertEqual(f2.__init__.__name__, "__init__")
+        self.assertEqual(f2.__init__.__qualname__, "TestFrozen.test_metadata.<locals>.F2.__init__")
+
+    def test_frozen_custom(self):
+        @frozen("custom")
+        class F3:
+            def __init__(self):
+                self.a = 1
+
+            def custom(self):
+                self.a = 2
+
+        f3 = F3()
+        self.assertEqual(f3.a, 1)
+        f3.custom()
+        self.assertEqual(f3.a, 2)
+        with self.assertRaises(AttributeError):
+            f3.a = 1
+
 
 if __name__ == "__main__":
     unittest.main()
