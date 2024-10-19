@@ -3,7 +3,7 @@ from threading import Thread, Lock
 from time import sleep
 import unittest
 
-from zstdlib import SingletonType, Singleton
+from zstdlib.singleton import SingletonType, Singleton
 
 
 class TestSingletonType(unittest.TestCase):

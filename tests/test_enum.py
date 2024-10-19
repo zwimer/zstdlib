@@ -1,7 +1,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,unused-variable
 import unittest
 
-from zstdlib import EnumType, Enum
+from zstdlib.enum import EnumType, Enum
 
 
 class TestEnumType(unittest.TestCase):

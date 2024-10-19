@@ -77,7 +77,7 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
             except ValueError:
                 log.error("test", exc_info=True)
         spt = self.messages[log][0].split("\n")
-        self.assertTrue(len(spt) > 2)
+        self.assertGreater(len(spt), 2)
         self.assertEqual("Traceback (most recent call last):", spt[1].strip())
         self.assertEqual("raise ValueError(name)", spt[-2].strip())
         self.assertEqual(f"ValueError: {name}", spt[-1].strip())
@@ -91,7 +91,7 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
                 log.info(base)
             messages.add(self.messages[log][0].rsplit("|", 1)[-1].strip())
         cols = ("red", "green", "yellow", "blue", "magenta", "cyan", "default")
-        self.assertEqual({getattr(Color, i)(base) for i in cols}, messages)
+        self.assertSetEqual({getattr(Color, i)(base) for i in cols}, messages)
 
 
 if __name__ == "__main__":
