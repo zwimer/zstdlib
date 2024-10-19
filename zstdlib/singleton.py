@@ -7,10 +7,8 @@ class SingletonType(type):
     A thread-safe singleton metaclass
     """
 
-    _seen: set[type] = (
-        set()
-    )  # Objects in this have been seen by singleton before and should not be constructed again
-    _instances: dict[type, Any] = {}  # Fully constructed singleton objects
+    _seen: set[type] = set()  # Types that should not be constructed again
+    _instances: dict[type, Any] = {}  # Fully constructed and initialized singleton types
     _lock = Condition()
     # For preventing subclassing of Singletons
     _types: list[type] = []
@@ -21,7 +19,7 @@ class SingletonType(type):
         Intercept all class definitions to prevent subclassing singleton types except for Singleton
         """
         if "__init_subclass__" in attrs:
-            raise NotImplementedError("Singleton's should not be subclassed")
+            raise NotImplementedError("Singleton's should not be subclassed or implement __init_subclass__")
 
         def _init_subclass(cls):
             with mcs._types_lock:
@@ -46,7 +44,7 @@ class SingletonType(type):
                 cls._lock.wait_for(lambda: cls in cls._instances)
                 return cls._instances[cls]
             cls._seen.add(cls)
-        # The object has not been constructed before, create it outside of any lock to avoid delays
+        # The object has not been constructed before, create it outside any lock to avoid delays
         obj = super().__call__(*args, **kwargs)
         with cls._lock:
             cls._instances[cls] = obj
