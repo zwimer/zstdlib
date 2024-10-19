@@ -1,5 +1,16 @@
 from collections.abc import Callable
-from typing import TypeVar
+
+
+_FN_ATTRS = (
+    "__annotations__",
+    "__type_params__",
+    "__qualname__",
+    "__module__",
+    "__name__",
+    "__doc__",
+    "__defaults__",
+    "__kwdefaults__",
+)
 
 
 class Freezable:
@@ -41,40 +52,39 @@ class Freezable:
         super().__delattr__(item)
 
 
-_SELF = TypeVar("_SELF")
-
-
-def frozen(arg: str | type[_SELF]):
+def frozen(arg: str | type):
     """
     A class decorator to permanently freeze a class after some method, __init__ by default
     If passed a string, will freeze after the method with that name
     """
 
-    def shim_method(cls: type[_SELF], name, new) -> None:
+    def shim_method(cls: type, name, new) -> None:
         original = getattr(cls, name)
-        new.__qualname__ = original.__qualname__
-        new.__name__ = original.__name__
-        new.__doc__ = original.__doc__
+        for i in _FN_ATTRS:
+            if hasattr(original, i):
+                setattr(new, i, getattr(original, i))
         setattr(cls, name, new)
 
-    def mk_frozen(cls: type[_SELF], method: str) -> type:
+    def mk_frozen(cls: type, method: str) -> type:
         original_method: Callable = getattr(cls, method)
+        original_setattr: Callable = cls.__setattr__
+        original_delattr: Callable = cls.__delattr__
 
-        def new_method(self: _SELF, *args, **kwargs):
+        def new_method(self, *args, **kwargs):
             ret = original_method(self, *args, **kwargs)
             # pylint: disable=protected-access
             self._frozen = True  # type: ignore[attr-defined]
             return ret
 
-        def __setattr__(self: _SELF, key: str, value) -> None:
+        def __setattr__(self, key: str, value):
             if getattr(self, "_frozen", False):
                 raise AttributeError("Cannot modify frozen object")
-            super(cls, self).__setattr__(key, value)  # type: ignore[misc]
+            return original_setattr(self, key, value)
 
-        def __delattr__(self: _SELF, item: str) -> None:
+        def __delattr__(self, item: str):
             if getattr(self, "_frozen", False):
                 raise AttributeError("Cannot modify frozen object")
-            super(cls, self).__delattr__(item)  # type: ignore[misc]
+            return original_delattr(self, item)
 
         # Update cls with the new methods
         shim_method(cls, method, new_method)

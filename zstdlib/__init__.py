@@ -1,4 +1,4 @@
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 from .frozen import Freezable, frozen
 from .singleton import Singleton

@@ -78,7 +78,7 @@ class TestFrozen(unittest.TestCase):
     def test_metadata(self):
         @frozen
         class F2:
-            def __init__(self):
+            def __init__(self, a: int = 1, *, b: bool = False) -> None:
                 """
                 init doc
                 """
@@ -87,6 +87,9 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(f2.__init__.__doc__.strip(), "init doc")
         self.assertEqual(f2.__init__.__name__, "__init__")
         self.assertEqual(f2.__init__.__qualname__, "TestFrozen.test_metadata.<locals>.F2.__init__")
+        self.assertTupleEqual(f2.__init__.__defaults__, (1,))
+        self.assertDictEqual(f2.__init__.__kwdefaults__, {"b": False})
+        self.assertDictEqual(f2.__init__.__annotations__, {"a": int, "b": bool, "return": None})
 
     def test_frozen_custom(self):
         @frozen("custom")
