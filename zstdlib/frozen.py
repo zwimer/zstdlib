@@ -35,3 +35,31 @@ class Freezable:
         if getattr(self, "_frozen", False):
             raise AttributeError("Cannot modify frozen object")
         super().__delattr__(item)
+
+
+def frozen(cls):
+    """
+    A class decorator to permanently freeze a class after __init__
+    """
+
+    def __setattr__(self, key: str, value) -> None:
+        if getattr(self, "_frozen", False):
+            raise AttributeError("Cannot modify frozen object")
+        super(cls, self).__setattr__(key, value)
+
+    def __delattr__(self, item: str) -> None:
+        if getattr(self, "_frozen", False):
+            raise AttributeError("Cannot modify frozen object")
+        super(cls, self).__delattr__(item)
+
+    init = cls.__init__
+
+    def __init__(self, *args, **kwargs):
+        init(self, *args, **kwargs)
+        self._frozen = True  # pylint: disable=protected-access
+
+    # Update cls with the new methods
+    cls.__setattr__ = __setattr__
+    cls.__delattr__ = __delattr__
+    cls.__init__ = __init__
+    return cls
