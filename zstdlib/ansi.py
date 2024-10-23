@@ -107,6 +107,12 @@ class Color(metaclass=_ColorMeta):
             raise TypeError("Cannot add non-Color to Color")
         return type(self)(code=f"{self.code[:-1]};{other.code[len(_PREFIX):]}")
 
+    def __eq__(self, other: object) -> bool:
+        """
+        :return: Whether the two colors are equal
+        """
+        return isinstance(other, type(self)) and self.code == other.code
+
     def __repr__(self) -> str:
         """
         :return: The ansi color code this object represents

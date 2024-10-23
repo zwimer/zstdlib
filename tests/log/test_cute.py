@@ -78,6 +78,28 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
         self.assertEqual(Color.bright_red_bg_yellow("CRITICAL".ljust(8)), l_name(5))
         self.assertEqual(Color.bright_red_bg_yellow("Level 60".ljust(8)), l_name(6))
 
+    def test_custom_dim_level(self) -> None:
+        name = "TestCuteFormatter.test_dim_level"
+        msg = "test"
+        with self.hijack(name, fmt=CuteFormatter(dim_level=5)) as log:
+            log.log(4, msg)
+            log.log(5, msg)
+        self.assertEqual(2, len(self.messages[log]))
+        l_name = lambda idx: self.messages[log][idx].split("|")[0].strip()
+        self.assertEqual(Color.dim("Level 4".ljust(8)), l_name(0))
+        self.assertEqual("Level 5", l_name(1))
+
+    def test_custom_level_color(self) -> None:
+        name = "TestCuteFormatter.test_custom_level_color"
+        msg = "test"
+        with self.hijack(name, fmt=CuteFormatter(level_colors={15: Color.bright_red_bg_yellow})) as log:
+            log.log(14, msg)
+            log.log(15, msg)
+        self.assertEqual(2, len(self.messages[log]))
+        l_name = lambda idx: self.messages[log][idx].split("|")[0].strip()
+        self.assertEqual("Level 14".ljust(8), l_name(0))
+        self.assertEqual(Color.bright_red_bg_yellow("Level 15".ljust(8)), l_name(1))
+
     def test_exception(self) -> None:
         name = "TestCuteFormatter.test_exception"
         with self.hijack(name, fmt=CuteFormatter()) as log:
