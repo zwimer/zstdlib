@@ -19,14 +19,14 @@ class CuteFormatter(Formatter):
     DEFAULT_CUTE_WIDTHS = {"cute_levelname": 8, "cute_time": 23, "cute_name": 12}
     __slots__ = ("colored", "_color", "_cmap", "_name_width")
 
-    # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value,keyword-arg-before-vararg
     def __init__(
         self,
-        colors: dict[str, Color] | None = None,
-        *,
-        colored: bool = True,
-        cute_widths: dict[str, int] = {},
         fmt="%(cute_levelname)s | %(cute_asctime)s | %(cute_name)s | %(cute_message)s",
+        *args,
+        colored: bool = True,
+        colors: dict[str, Color] = {},
+        cute_widths: dict[str, int] = {},
         **kwargs,
     ):
         """
@@ -34,16 +34,15 @@ class CuteFormatter(Formatter):
         Do not modify cute_ parameters in the fmt string; they might have special formatting that is not visible
         Ex. %(cute_name)-8s should be done via cute_widths["cute_name"] = 8
         This is because cute_widths takes into account 0-width color codes when padding
-        :param colors: The colors to use for the given loggers, automatic for non-specified loggers
-        :param colored: If False, no colors will be used regardless of the colors parameter
         :param fmt: The format string to use for the log message; do not modify cute_ parameters
+        :param args: Passed to logging.Formatter
+        :param colored: If False, no colors will be used regardless of the colors parameter
+        :param colors: The colors to use for the given loggers, automatic for non-specified loggers
         :param cute_widths: The widths of the cute_ columns in the log message
         :param kwargs: Passed to logging.Formatter
         """
-        super().__init__(fmt=fmt, **kwargs)
-        self._cmap: dict[str, Color] = {}
-        if colors is not None:
-            self.update(colors)
+        super().__init__(fmt, *args, **kwargs)
+        self._cmap: dict[str, Color] = dict(colors)
         self._widths = defaultdict(int, self.DEFAULT_CUTE_WIDTHS | cute_widths)
         if any(not i.startswith("cute_") for i in self._widths):
             raise ValueError("cute_widths must only contain cute_ parameters")
@@ -53,7 +52,7 @@ class CuteFormatter(Formatter):
         """
         Set the colors for all loggers; enables colors if disabled
         """
-        self._cmap.update(colors)
+        self._cmap |= colors
 
     def format(self, record: LogRecord) -> str:
         levelname: str = record.levelname.ljust(self._widths["cute_levelname"])
