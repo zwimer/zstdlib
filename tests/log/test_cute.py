@@ -17,16 +17,25 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
         msg = self.messages[log][0].rsplit("|", 1)[-1]
         self.assertEqual(f" {color.code}test{Color.RESET}", msg)
 
-    def test_name_width(self) -> None:
-        width = 123
+    def test_width(self) -> None:
         color = Color.red
-        name = "TestCuteFormatter.name_width"
-        with self.hijack(name, fmt=CuteFormatter(colors={name: color}, name_width=width)) as log:
+        name = "TestCuteFormatter.test_width"
+        cw = {
+            "cute_levelname": 300,
+            "cute_asctime": 200,
+            "cute_name": 100,
+            "cute_message": 400,
+        }
+        fmt = CuteFormatter(fmt="|".join(f"%({i})s" for i in cw), colors={name: color}, cute_widths=cw)
+        with self.hijack(name, fmt=fmt) as log:
             log.debug("test")
-        lvl, _, nam, msg = self.messages[log][0].split("|")
-        self.assertEqual("DEBUG", lvl.strip())
-        self.assertEqual(f" {color(name.ljust(width))} ", nam)
-        self.assertEqual(f" {color('test')}", msg)
+        lvl, date, nam, msg = self.messages[log][0].split("|")
+        self.assertEqual("DEBUG".ljust(cw["cute_levelname"]), lvl)
+        self.assertEqual(cw["cute_asctime"], len(date))
+        self.assertEqual(f"{color(name.ljust(cw['cute_name']))}", nam)
+        self.assertEqual(f"{color('test'.ljust(cw['cute_message']))}", msg)
+        with self.assertRaises(ValueError):
+            CuteFormatter(cute_widths={"name": 123})
 
     def test_no_color(self) -> None:
         name = "TestCuteFormatter.test_no_color"

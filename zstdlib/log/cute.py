@@ -1,6 +1,6 @@
 from __future__ import annotations
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, Formatter
-from traceback import format_exception
+from collections import defaultdict
 from typing import TYPE_CHECKING
 from zlib import adler32
 from copy import copy
@@ -16,32 +16,37 @@ class CuteFormatter(Formatter):
     A log formatter that can print log messages with colors.
     """
 
+    DEFAULT_CUTE_WIDTHS = {"cute_levelname": 8, "cute_time": 23, "cute_name": 12}
     __slots__ = ("colored", "_color", "_cmap", "_name_width")
 
+    # pylint: disable=dangerous-default-value
     def __init__(
         self,
         colors: dict[str, Color] | None = None,
         *,
         colored: bool = True,
-        name_width: int = 12,
-        fmt="%(cute_levelname)s | %(cute_time)s | %(cute_name)s | %(cute_message)s%(cute_exc)s",
+        cute_widths: dict[str, int] = {},
+        fmt="%(cute_levelname)s | %(cute_asctime)s | %(cute_name)s | %(cute_message)s",
         **kwargs,
     ):
         """
         log_colors may be overridden, for example, trace logs are printed dimly
         Do not modify cute_ parameters in the fmt string; they might have special formatting that is not visible
-        Ex. %(cute_name)-8s should be done via name_width, that takes into account 0-width color codes
+        Ex. %(cute_name)-8s should be done via cute_widths["cute_name"] = 8
+        This is because cute_widths takes into account 0-width color codes when padding
         :param colors: The colors to use for the given loggers, automatic for non-specified loggers
         :param colored: If False, no colors will be used regardless of the colors parameter
         :param fmt: The format string to use for the log message; do not modify cute_ parameters
-        :param name_width: How wide the column containing the logger name should be (minus padding)
+        :param cute_widths: The widths of the cute_ columns in the log message
         :param kwargs: Passed to logging.Formatter
         """
         super().__init__(fmt=fmt, **kwargs)
         self._cmap: dict[str, Color] = {}
         if colors is not None:
             self.update(colors)
-        self._name_width = name_width
+        self._widths = defaultdict(int, self.DEFAULT_CUTE_WIDTHS | cute_widths)
+        if any(not i.startswith("cute_") for i in self._widths):
+            raise ValueError("cute_widths must only contain cute_ parameters")
         self.colored: bool = colored
 
     def update(self, colors: dict[str, Color]):
@@ -51,22 +56,22 @@ class CuteFormatter(Formatter):
         self._cmap.update(colors)
 
     def format(self, record: LogRecord) -> str:
-        level: str = record.levelname.ljust(8)
-        when = self.formatTime(record, self.datefmt).ljust(23)
-        name: str = record.name.ljust(self._name_width)
-        message: str = record.getMessage()
+        levelname: str = record.levelname.ljust(self._widths["cute_levelname"])
+        asctime = self.formatTime(record, self.datefmt).ljust(self._widths["cute_asctime"])
+        name: str = record.name.ljust(self._widths["cute_name"])
+        message: str = record.getMessage().ljust(self._widths["cute_message"])
         if self.colored:
             # Color level
             if record.levelno >= CRITICAL:
-                level = Color.bright_red_bg_yellow(level)
+                levelname = Color.bright_red_bg_yellow(levelname)
             elif record.levelno >= ERROR:
-                level = Color.red(level)
+                levelname = Color.red(levelname)
             elif record.levelno >= WARNING:
-                level = Color.yellow(level)
+                levelname = Color.yellow(levelname)
             elif record.levelno >= INFO:
-                level = Color.blue(level)
+                levelname = Color.blue(levelname)
             elif record.levelno < DEBUG:
-                level = Color.dim(level)
+                levelname = Color.dim(levelname)
             # Color text
             if (col := self._cmap.get(record.name, None)) is None:
                 c: int = adler32(record.name.encode()) % 7
@@ -77,16 +82,15 @@ class CuteFormatter(Formatter):
             name = col(name)
             # Color timestamp
             if record.levelno < DEBUG:
-                when = Color.dim(when)
+                asctime = Color.dim(asctime)
         # Create an updated record then format that
         new = copy(record)
         new.__dict__.update(
             {
-                "cute_levelname": level,
-                "cute_time": when,
+                "cute_levelname": levelname,
+                "cute_asctime": asctime,
                 "cute_name": name,
                 "cute_message": message,
-                "cute_exc": ("\n" + "".join(format_exception(*new.exc_info))[:-1]) if new.exc_info else "",
             }
         )
         return super().format(new)
