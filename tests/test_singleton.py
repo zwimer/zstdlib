@@ -23,7 +23,7 @@ class TestSingletonType(unittest.TestCase):
         class ST3(metaclass=SingletonType):
             pass
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
 
             class ST4(ST3):
                 pass
@@ -116,7 +116,7 @@ class TestSingleton(unittest.TestCase):
         class S3(Singleton):
             pass
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
 
             class S4(S3):
                 pass

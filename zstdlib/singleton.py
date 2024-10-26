@@ -19,13 +19,13 @@ class SingletonType(type):
         Intercept all class definitions to prevent subclassing singleton types except for Singleton
         """
         if "__init_subclass__" in attrs:
-            raise NotImplementedError("Singleton's should not be subclassed or implement __init_subclass__")
+            raise TypeError("Singleton's should not be subclassed or implement __init_subclass__")
 
         def _init_subclass(cls):
             with mcs._types_lock:
                 if any(issubclass(cls, i) for i in mcs._types if i is not Singleton):
                     err = "Do not derive from Singletons other than the base Singleton type"
-                    raise NotImplementedError(err)
+                    raise TypeError(err)
                 mcs._types.append(cls)
 
         attrs["__init_subclass__"] = _init_subclass

@@ -63,9 +63,9 @@ class TestEnumType(unittest.TestCase):
         class ET10(metaclass=EnumType):
             arg1: int = 0
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             ET10()
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             ET10.__init__({})
 
 
@@ -127,9 +127,9 @@ class TestEnum(unittest.TestCase):
         class E10(Enum):
             arg1: int = 0
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             E10()
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             E10.__init__({})
 
 

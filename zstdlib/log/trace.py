@@ -3,12 +3,10 @@ import logging
 
 
 class _State:
+    __init__ = None  # type: ignore
     start: bool = False
     ready: bool = False
     lock = Lock()
-
-    def __init__(self):
-        raise NotImplementedError()
 
 
 def install(*, value=logging.DEBUG // 2, force: bool = False) -> None:

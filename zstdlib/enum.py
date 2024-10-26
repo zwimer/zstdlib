@@ -1,10 +1,6 @@
 import collections
 
 
-def _not_implemented(*_, **__):
-    raise NotImplementedError("Cannot instantiate this class")
-
-
 class EnumType(type):
     """
     Metaclass for uninstantiable Enum classes with required annotations and unique values
@@ -17,7 +13,7 @@ class EnumType(type):
         for bad in ("__init__", "__new__"):
             if bad in attrs:
                 raise AttributeError("Cannot define __init__ or __new__")
-            attrs[bad] = _not_implemented
+            attrs[bad] = None
         # Check annotations
         public = {i: k for i, k in attrs.items() if not i.startswith("__")}
         annotations = attrs.get("__annotations__", {})
