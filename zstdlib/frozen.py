@@ -25,13 +25,26 @@ class Freezable:
         self._can_thaw: bool = True
         self._frozen: bool = False
 
+    # Public
+
+    @property
+    def frozen(self) -> bool:
+        """Check if this object is frozen"""
+        return self._frozen
+
+    @property
+    def thawable(self) -> bool:
+        """Check if this object can be thawed or is unfrozen"""
+        return self._can_thaw
+
     def freeze(self, *, permanent: bool = False):
         """
         Prevent further modifications to this object
+        This function can be called on an already frozen object
         """
         if permanent:
-            self._can_thaw = False
-        self._frozen = True
+            object.__setattr__(self, "_can_thaw", False)
+        object.__setattr__(self, "_frozen", True)
 
     def thaw(self):
         """
@@ -47,7 +60,7 @@ class Freezable:
         super().__setattr__(key, value)
 
     def __delattr__(self, item: str) -> None:
-        if getattr(self, "_frozen", False):
+        if getattr(self, "_frozen", False):  # B/c invoked before __init__ defines _frozen
             raise AttributeError("Cannot modify frozen object")
         super().__delattr__(item)
 
@@ -58,12 +71,13 @@ def frozen(arg: str | type):
     If passed a string, will freeze after the method with that name
     """
 
-    def shim_method(cls: type, name, new) -> None:
+    def shim_method(cls: type, name: str, new: Callable) -> None:
+        """Install shims for _FN_ATTRS; modifies new"""
         original = getattr(cls, name)
-        for i in _FN_ATTRS:
+        for i in _FN_ATTRS:  # Copy attributes of old fn onto new fn
             if hasattr(original, i):
                 setattr(new, i, getattr(original, i))
-        setattr(cls, name, new)
+        setattr(cls, name, new)  # Install
 
     def mk_frozen(cls: type, method: str) -> type:
         original_method: Callable = getattr(cls, method)
