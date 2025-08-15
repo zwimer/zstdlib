@@ -1,4 +1,4 @@
-__version__ = "0.0.11"
+__version__ = "0.1.0"
 
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
