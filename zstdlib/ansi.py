@@ -144,7 +144,7 @@ def _generate_code(
         ints.append(foreground.value)
     if background:
         ints.append(background.value)
-    return f"{_PREFIX}{';'.join(str(i) for i in ints)}m"
+    return f"{_PREFIX}{';'.join(map(str, ints))}m"
 
 
 @cache
