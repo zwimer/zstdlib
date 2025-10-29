@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,unused-variable,attribute-defined-outside-init
+from sys import version_info
 import unittest
 
 from zstdlib.frozen import Freezable, frozen
@@ -104,10 +105,15 @@ class TestFrozen(unittest.TestCase):
         f1 = F1()
         self.assertEqual(f1.__init__.__doc__.strip(), "init doc")
         self.assertEqual(f1.__init__.__name__, "__init__")
-        self.assertEqual(f1.__init__.__qualname__, "TestFrozen.test_metadata.<locals>.F2.__init__")
+        self.assertEqual(f1.__init__.__qualname__, "TestFrozen.test_metadata.<locals>.F1.__init__")
         self.assertTupleEqual(f1.__init__.__defaults__, (1,))
         self.assertDictEqual(f1.__init__.__kwdefaults__, {"b": False})
-        self.assertDictEqual(f1.__init__.__annotations__, {"a": int, "b": bool, "return": None})
+        if version_info <= (3, 13) or hasattr(f1.__init__, "__annotations__"):
+            self.assertDictEqual(f1.__init__.__annotations__, {"a": int, "b": bool, "return": None})
+        else:  # annotations changed in 3.14, .__annotations__ *might* not exist
+            from annotationlib import get_annotations
+
+            self.assertDictEqual(get_annotations(f1.__init__), {"a": int, "b": bool, "return": None})
 
     def test_frozen_custom(self):
         @frozen("custom")
