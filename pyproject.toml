@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "zstdlib"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 ]
@@ -14,20 +14,7 @@ keywords = ["remote", "pipe"]
 license = {text = "GPLv3"}
 description = "A set of useful python utilities"
 urls = {Homepage = "https://github.com/zwimer/zstdlib"}
-requires-python = ">= 3.12"
-# dependencies = [
-#     # Client
-#     "zstandard[cffi]",
-#     "pycryptodomex",
-#     "cryptography",
-#     "requests",
-#     "tqdm",
-#     # Server
-#     "waitress",
-#     "flask",
-#     # Both
-#     "human_readable",
-# ]
+requires-python = ">= 3.14"
 dynamic = ["version"]
 
 [project.readme]
@@ -38,14 +25,14 @@ content-type = "text/markdown"
 include-package-data = true
 license-files = ["LICENSE"]
 
-[tool.setuptools.packages]
-find = {namespaces = false}
+[tool.setuptools.packages.find]
+namespaces = false
 
 [tool.setuptools.package-data]
 zstdlib = ["py.typed"]
 
-[tool.setuptools.dynamic]
-version = {attr = "zstdlib.__version__"}
+[tool.setuptools.dynamic.version]
+attr = "zstdlib.__version__"
 
 # Tools
 
@@ -63,7 +50,7 @@ disable = [
 
 [tool.black]
 line-length = 110
-target-version = ["py312", "py313"]
+target-version = ["py313"]   # py314 when available
 
 [tool.ruff]
 line-length = 110

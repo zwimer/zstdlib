@@ -1,5 +1,6 @@
 from collections.abc import Iterator
-from typing import Any
+from typing import ForwardRef, Any
+import annotationlib
 
 
 class _Auto:
@@ -17,6 +18,7 @@ class EnumType(type):
     These 'Enum' classes may not be modified after creation
     Items of annotation types in type_check will be type-checked
     Duplicate values (as determined by set()) are not allowed unless dupes_ok is True
+    If dupe-checking is enabled, values must be hashable
     """
 
     _AUTO_PREFIX = "Enum_Auto_"
@@ -36,38 +38,46 @@ class EnumType(type):
 
     @classmethod
     def _gen_entries_and_annotations(
-        mcs, attrs: dict, dupes_ok: bool
-    ) -> tuple[dict[str, tuple[type | None, Any]], dict[str, type | None]]:
+        mcs,
+        attrs: dict,
+        dupes_ok: bool,
+        ans: dict[str, type | ForwardRef],
+    ) -> dict[str, tuple[type | None, Any]]:
         """
         Generate enum entries from attrs, checking for duplicates and missing annotations
         Does not check for empty enum or type correctness
+        Updates ans with new annotations
         """
         seen = set()
         auto_val = 0
-        _entries = {}
-        _annotations = dict(attrs.get("__annotations__", {}))
-        try:
-            for a_name, value in ((i, k) for i, k in attrs.items() if not i.startswith("__")):
-                if value is auto:
-                    auto_val += 1
-                    value = mcs._AutoValue(auto_val)
-                    if a_name in _annotations:
-                        raise TypeError("Auto enum entries may not be type annotated")
-                    _annotations[a_name] = mcs._AutoValue
-                elif isinstance(value, mcs._AutoValue):
-                    raise ValueError("Enum entries may not be of type EnumType._AutoValue")
-                if not dupes_ok:
-                    if value in seen:
-                        raise ValueError(f"Duplicate enum value: {value}")
+        ret = {}
+        for a_name, value in ((i, k) for i, k in attrs.items() if not i.startswith("__")):
+            # If auto, ensure not annotated, then annotate
+            if value is auto:
+                auto_val += 1
+                value = mcs._AutoValue(auto_val)
+                if a_name in ans:
+                    raise TypeError("Auto enum entries may not be type annotated")
+                ans[a_name] = mcs._AutoValue
+            # If annotated as auto, complain
+            elif isinstance(value, mcs._AutoValue):
+                raise ValueError("Enum entries may not be of type EnumType._AutoValue")
+            # Dupe check, requires hash-able values
+            if not dupes_ok:
+                if value in seen:
+                    raise ValueError(f"Duplicate enum value: {value}")
+                try:
                     seen.add(value)
-                _entries[a_name] = (_annotations[a_name], value)
-        except TypeError:
-            raise TypeError(f"Unhashable enum value: {value}") from None
-        except KeyError:
-            raise ValueError("Non-auto enum entries must be type annotated") from None
-        return _entries, _annotations
+                except TypeError:
+                    raise TypeError(f"Unhashable enum value cannot be dupe checked: {value}") from None
+            # Save annotation and value to entries
+            try:
+                ret[a_name] = (ans[a_name], value)
+            except KeyError:
+                raise ValueError("Non-auto enum entries must be type annotated") from None
+        return ret
 
-    # pylint: disable=too-many-arguments, dangerous-default-value
+    # pylint: disable=too-many-arguments, dangerous-default-value, too-many-locals
     def __new__(
         mcs,
         name,
@@ -82,24 +92,26 @@ class EnumType(type):
         # Disallow undesired instance methods
         if bad := attrs.keys() & {"__init__", "__new__", "__entries__"}:
             raise AttributeError(f"Illegal methods in Enum class: {', '.join(bad)}")
-        # Generate entries
-        _entries, _annotations = mcs._gen_entries_and_annotations(attrs, dupes_ok)
+        # Generate entries and annotations
+        ans = annotationlib.get_annotations(super().__new__(mcs, name, bases, attrs))
+        entries_ = mcs._gen_entries_and_annotations(attrs, dupes_ok, ans)
         # Validate entries
-        if no_value := (_annotations.keys() - _entries.keys()):
+        if no_value := (ans.keys() - entries_.keys()):
             raise ValueError(f"Entries must have a value: {' '.join(no_value)}")
-        if (not empty_ok) and not _entries:
+        if (not empty_ok) and not entries_:
             raise ValueError("Enum type may not be empty")
         if type_check:
-            for a_name, (ann, val) in _entries.items():
+            for a_name, (ann, val) in entries_.items():
                 if ann in type_check and (
                     (ann is None is not val) or (ann is not None and not isinstance(val, ann))
                 ):
                     raise TypeError(f"Entry {a_name} is not of type {ann}")
         # Construct class
-        attrs["__entries__"] = _entries
-        attrs["__annotations__"] = _annotations
+        attrs["__entries__"] = entries_  # For our usage later
         attrs["__init__"] = attrs["__new__"] = NotImplemented
-        return type.__new__(mcs, name, bases, attrs, **kwargs)
+        ret = type.__new__(mcs, name, bases, attrs, **kwargs)
+        super().__setattr__(ret, "__annotations__", ans)  # Since we disable this method, use super()
+        return ret
 
     # Disallow modification
 
