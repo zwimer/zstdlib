@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import ForwardRef, Any
+from typing import Any
 import annotationlib
 
 
@@ -41,7 +41,7 @@ class EnumType(type):
         mcs,
         attrs: dict,
         dupes_ok: bool,
-        ans: dict[str, type | ForwardRef],
+        ans: dict[str, type | None],
     ) -> dict[str, tuple[type | None, Any]]:
         """
         Generate enum entries from attrs, checking for duplicates and missing annotations

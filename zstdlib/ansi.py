@@ -39,15 +39,43 @@ class RawColor:
         self.background = background
         self.value = self.color.value + (10 if self.background else 0) + (60 if self.bright else 0)
 
+    @classmethod
+    @cache
+    def _parse_color(cls, item: str) -> str:
+        """Construct a color following the rules defined by Color"""
+        item = item.lower()
+        if "bright_bg" in item:
+            raise ValueError("bg_ must precede bright_ in color specification")
+        pat = f"(:?bright_)?({'|'.join(list(PureColor.__members__))})"
+        shx = re.findall(f"(bg_){pat}", item)
+        if len(shx) > 1:
+            raise ValueError(f"Multiple background colors specified in {item}")
+        bg = None
+        if len(shx) == 1:
+            item = item.replace("".join(shx[0]), "")
+            bg = cls(shx[0][-1], bright="bright_" in shx[0], background=True)
+        shx = re.findall(pat, item)
+        if len(shx) > 1:
+            raise ValueError(f"Multiple foreground colors specified in {item}")
+        fg = None
+        if len(shx) == 1:
+            item = item.replace("".join(shx[0]), "")
+            fg = cls(shx[0][-1], bright="bright_" in shx[0])
+        # Determine modifiers and construct the color
+        attrs = [i for i in item.split("_") if i]
+        if any(bad := [i for i in attrs if i not in MODIFIERS]):
+            raise ValueError(f"Unknown modifiers(s): {', '.join(bad)}")
+        return _generate_code(fg, bg, {i: True for i in MODIFIERS if i in attrs})
+
 
 class _ColorMeta(type):
     """
     A metaclass that implements __getattr__ at the class level for Color
     """
 
-    def __getattr__(cls, item: str) -> "Color":
+    def __getattr__(cls, item: str) -> Color:
         try:
-            return cls(code=_parse_color(item))
+            return cls(code=RawColor._parse_color(item))
         except ValueError as e:
             raise AttributeError(str(e)) from e
 
@@ -91,7 +119,7 @@ class Color(metaclass=_ColorMeta):
         elif isinstance(fmt, RawColor):
             self.code = f"{_PREFIX}{fmt.value}m"
         else:
-            self.code = _parse_color(fmt) if isinstance(fmt, str) else fmt.code
+            self.code = RawColor._parse_color(fmt) if isinstance(fmt, str) else fmt.code
 
     def __call__(self, string: str) -> str:
         """
@@ -145,34 +173,3 @@ def _generate_code(
     if background:
         ints.append(background.value)
     return f"{_PREFIX}{';'.join(map(str, ints))}m"
-
-
-@cache
-def _parse_color(item: str) -> str:
-    """
-    Construct a color following the rules defined by Color
-    This method is not a classmethod since python3.13 deprecates mixing classmethod and cache
-    """
-    item = item.lower()
-    if "bright_bg" in item:
-        raise ValueError("bg_ must precede bright_ in color specification")
-    pat = f"(:?bright_)?({'|'.join(list(PureColor.__members__))})"
-    shx = re.findall(f"(bg_){pat}", item)
-    if len(shx) > 1:
-        raise ValueError(f"Multiple background colors specified in {item}")
-    bg: RawColor | None = None
-    if len(shx) == 1:
-        item = item.replace("".join(shx[0]), "")
-        bg = RawColor(shx[0][-1], bright="bright_" in shx[0], background=True)
-    shx = re.findall(pat, item)
-    if len(shx) > 1:
-        raise ValueError(f"Multiple foreground colors specified in {item}")
-    fg: RawColor | None = None
-    if len(shx) == 1:
-        item = item.replace("".join(shx[0]), "")
-        fg = RawColor(shx[0][-1], bright="bright_" in shx[0])
-    # Determine modifiers and construct the color
-    attrs = [i for i in item.split("_") if i]
-    if any(bad := [i for i in attrs if i not in MODIFIERS]):
-        raise ValueError(f"Unknown modifiers(s): {', '.join(bad)}")
-    return _generate_code(fg, bg, {i: True for i in MODIFIERS if i in attrs})

@@ -50,7 +50,7 @@ disable = [
 
 [tool.black]
 line-length = 110
-target-version = ["py313"]   # py314 when available
+target-version = ["py314"]
 
 [tool.ruff]
 line-length = 110

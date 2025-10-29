@@ -1,4 +1,3 @@
-from __future__ import annotations
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, Formatter
 from collections import defaultdict
 from typing import TYPE_CHECKING
