@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any
+from typing import ClassVar, Any
 import annotationlib
 
 
@@ -22,7 +22,7 @@ class EnumType(type):
     """
 
     _AUTO_PREFIX = "Enum_Auto_"
-    _TC_DEFAULT: set[type | None] = {int, str, float, bool, complex, bytes, None, type(None)}
+    _TC_DEFAULT: ClassVar[set[type | None]] = {int, str, float, bool, complex, bytes, None, type(None)}
 
     class _AutoValue:
         """A class representing an automatically assigned enum value"""
@@ -163,4 +163,4 @@ def values(enum: Any) -> tuple[Any, ...]:
     return tuple(k[1] for k in enum.__entries__.values())  # type: ignore[attr-defined]
 
 
-__all__ = ("Enum", "EnumType", "entries", "values", "auto")
+__all__ = ("Enum", "EnumType", "auto", "entries", "values")

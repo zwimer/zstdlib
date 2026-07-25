@@ -24,7 +24,7 @@ class TestEnumType(unittest.TestCase):
         class ET1(metaclass=EnumType, dupes_ok=True):
             a: int = 5
             b: int = 5
-            c: dict = {}
+            c: dict = {}  # noqa: RUF012
 
         with self.assertRaises(ValueError):
 
@@ -35,7 +35,7 @@ class TestEnumType(unittest.TestCase):
         with self.assertRaises(TypeError):
 
             class ET3(metaclass=EnumType):
-                a: dict = {}
+                a: dict = {}  # noqa: RUF012
 
     def test_type_check(self) -> None:
         class ET1(metaclass=EnumType, type_check=set()):

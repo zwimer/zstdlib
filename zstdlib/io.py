@@ -1,19 +1,10 @@
-from io import (
-    IOBase,
-    TextIOBase as _PyRawTextIOBase,
-    RawIOBase as _PyRawIOBase,
-    BufferedIOBase as _PyBufferedIOBase,
-)
+from io import BufferedIOBase, TextIOBase, RawIOBase, IOBase
+from weakref import WeakKeyDictionary
 from threading import RLock
 from itertools import chain
 from typing import Self
-import weakref
 
-
-__all__ = ("TextIO", "BinaryIO", "io")
-
-type _BinaryBase = _PyRawIOBase | _PyBufferedIOBase
-type _TextBase = _PyRawTextIOBase
+__all__ = ("BinaryIO", "TextIO", "io")
 
 
 class ProtectedFile:
@@ -52,8 +43,8 @@ class _IOWrapperBase[T: (str, bytes)]:
     Note: This class takes ownership of the input object, do not use it elsewhere
     """
 
-    __slots__ = ("lock", "f", "_buffer", "_eof")
-    _instances: weakref.WeakKeyDictionary[IOBase, Self] = weakref.WeakKeyDictionary()
+    __slots__ = ("_buffer", "_eof", "f", "lock")
+    _instances: WeakKeyDictionary[IOBase, Self] = WeakKeyDictionary()
     _wr_lock = RLock()
 
     def __new__(cls, f: IOBase, binary: bool) -> Self:
@@ -189,8 +180,8 @@ class _IOWrapperBase[T: (str, bytes)]:
 
 def _mode(f: IOBase, binary: bool | None) -> bool:
     mode = getattr(f, "mode", "")
-    binary = binary or "b" in mode or isinstance(f, (_PyRawIOBase, _PyBufferedIOBase))
-    text = (binary is False) or (mode and "b" not in mode) or isinstance(f, _PyRawTextIOBase)
+    binary = binary or "b" in mode or isinstance(f, (RawIOBase, BufferedIOBase))
+    text = (binary is False) or (mode and "b" not in mode) or isinstance(f, TextIOBase)
     if not text and not binary:
         raise TypeError("Cannot determine if IO object is text or binary")
     if text and binary:

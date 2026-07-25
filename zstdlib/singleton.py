@@ -1,8 +1,7 @@
-from typing import TypeVar, Self, Any, cast
+from typing import ClassVar, TypeVar, Self, Any, cast
 from collections import defaultdict
 from threading import RLock
 from functools import cache
-
 
 T = TypeVar("T")
 
@@ -26,9 +25,9 @@ class _SingletonType(type):
     """
 
     _disallow_init_subclass = False  # If True, disallow __init_subclass__ in __new__'s attrs
-    _instances: dict[type, Any] = {}  # Fully constructed and initialized singleton types
+    _instances: ClassVar[dict[type, Any]] = {}  # Fully constructed and initialized singleton types
     # Lock is preferred to RLock, but could deadlock if user write a constructor that invokes itself
-    _cls_locks: dict[type, RLock] = defaultdict(RLock)
+    _cls_locks: ClassVar[dict[type, RLock]] = defaultdict(RLock)
     _lock = RLock()
 
     def __new__(mcs, name, bases, attrs, **kwargs):

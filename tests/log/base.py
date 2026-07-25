@@ -1,8 +1,8 @@
 from logging.handlers import QueueHandler
 from contextlib import contextmanager
 from collections.abc import Callable
+from typing import ClassVar, Any
 from threading import Lock
-from typing import Any
 import logging
 import queue
 
@@ -20,12 +20,12 @@ class LeftBase:
     A base class for tests that hijack loggers
     """
 
-    _hijacked: set[logging.Logger] = set()  # Set of all loggers that have ever been hijacked
-    _qmap: dict[logging.Logger, queue.Queue[logging.LogRecord]] = {}
-    _lb_old: dict[logging.Logger, list[logging.Handler]] = {}
+    _hijacked: ClassVar[set[logging.Logger]] = set()  # Set of all loggers that have ever been hijacked
+    _qmap: ClassVar[dict[logging.Logger, queue.Queue[logging.LogRecord]]] = {}
+    _lb_old: ClassVar[dict[logging.Logger, list[logging.Handler]]] = {}
     _lb_lock = Lock()
 
-    messages: dict[logging.Logger, list[str]] = {}
+    messages: ClassVar[dict[logging.Logger, list[str]]] = {}
 
     @classmethod
     def hijack(cls, name: str, reuse: bool = False, fmt: logging.Formatter | None = None):

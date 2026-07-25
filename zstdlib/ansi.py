@@ -3,7 +3,6 @@ from functools import cache
 from typing import Self
 import re
 
-
 MODIFIERS = ("bold", "dim", "italic", "underline", "blinking", "inverse", "hidden", "strikethrough")
 
 _PREFIX = "\033["
@@ -31,7 +30,7 @@ class RawColor:
     A class that represents a color with all possible modifiers
     """
 
-    __slots__ = ("color", "bright", "background", "value")
+    __slots__ = ("background", "bright", "color", "value")
 
     def __init__(self, color: PureColor | str | int, *, bright: bool = False, background: bool = False):
         self.color = PureColor(getattr(PureColor, color) if isinstance(color, str) else color)
@@ -145,7 +144,7 @@ class Color(metaclass=_ColorMeta):
         """
         :return: The ansi color code this object represents
         """
-        return f"<Color {repr(self.code)}>"
+        return f"<Color {self.code!r}>"
 
     @classmethod
     def factory(

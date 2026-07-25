@@ -106,7 +106,7 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
             try:
                 raise ValueError(name)
             except ValueError:
-                log.error("test", exc_info=True)
+                log.exception("test")
         spt = self.messages[log][0].split("\n")
         self.assertGreater(len(spt), 2)
         self.assertEqual("Traceback (most recent call last):", spt[1].strip())

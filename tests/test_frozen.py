@@ -108,7 +108,7 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(f1.__init__.__qualname__, "TestFrozen.test_metadata.<locals>.F1.__init__")
         self.assertTupleEqual(f1.__init__.__defaults__, (1,))
         self.assertDictEqual(f1.__init__.__kwdefaults__, {"b": False})
-        if version_info <= (3, 13) or hasattr(f1.__init__, "__annotations__"):
+        if version_info < (3, 13, 0.1) or hasattr(f1.__init__, "__annotations__"):
             self.assertDictEqual(f1.__init__.__annotations__, {"a": int, "b": bool, "return": None})
         else:  # annotations changed in 3.14, .__annotations__ *might* not exist
             from annotationlib import get_annotations

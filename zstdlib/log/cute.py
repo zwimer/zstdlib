@@ -1,6 +1,6 @@
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, Formatter
+from typing import TYPE_CHECKING, ClassVar
 from collections import defaultdict
-from typing import TYPE_CHECKING
 from zlib import adler32
 from copy import copy
 
@@ -15,9 +15,9 @@ class CuteFormatter(Formatter):
     A log formatter that can print log messages with colors.
     """
 
-    __slots__ = ("colored", "_color", "_cmap", "_lvl_cmap", "_dim_level", "_name_width")
-    DEFAULT_CUTE_WIDTHS: dict[str, int] = {"cute_levelname": 8, "cute_time": 23, "cute_name": 12}
-    DEFAULT_LEVEL_COLORS: dict[int, Color] = {
+    __slots__ = ("_cmap", "_color", "_dim_level", "_lvl_cmap", "_name_width", "colored")
+    DEFAULT_CUTE_WIDTHS: ClassVar[dict[str, int]] = {"cute_levelname": 8, "cute_time": 23, "cute_name": 12}
+    DEFAULT_LEVEL_COLORS: ClassVar[dict[int, Color]] = {
         INFO: Color.blue,
         WARNING: Color.yellow,
         ERROR: Color.red,
@@ -31,9 +31,9 @@ class CuteFormatter(Formatter):
         *args,
         colored: bool = True,
         dim_level: int = DEBUG,
-        colors: dict[str, Color] = {},
-        level_colors: dict[int, Color] = {},
-        cute_widths: dict[str, int] = {},
+        colors: dict[str, Color] | None = None,
+        level_colors: dict[int, Color] | None = None,
+        cute_widths: dict[str, int] | None = None,
         **kwargs,
     ):
         """
@@ -51,6 +51,9 @@ class CuteFormatter(Formatter):
         :param cute_widths: The widths of the cute_ columns in the log message
         :param kwargs: Passed to logging.Formatter
         """
+        colors = {} if colors is None else colors
+        level_colors = {} if level_colors is None else level_colors
+        cute_widths = {} if cute_widths is None else cute_widths
         super().__init__(fmt, *args, **kwargs)
         self._dim_level: int = dim_level
         self._cmap: dict[str, Color] = dict(colors)

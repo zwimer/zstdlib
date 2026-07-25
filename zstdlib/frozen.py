@@ -1,6 +1,5 @@
 from collections.abc import Callable
 
-
 _FN_ATTRS = (
     "__annotations__",
     "__type_params__",

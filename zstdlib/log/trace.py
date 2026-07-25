@@ -46,7 +46,7 @@ def _define_logging_trace(method: str, value: int) -> None:
         has no handlers, call basicConfig() to add a console handler with a
         pre-defined format.
         """
-        logging.log(value, msg, *args, **kwargs)
+        logging.log(value, msg, *args, **kwargs)  # noqa: LOG015
 
     setattr(logging, method, trace)
 
