@@ -28,6 +28,10 @@ repos:
     hooks:
     -   id: mypy
         additional_dependencies: [types-requests, types-waitress]
+-   repo: https://github.com/betterleaks/betterleaks
+    rev: v1.7.2
+    hooks:
+    -   id: betterleaks
 
 #
 # Fail fast
