@@ -10,7 +10,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 ]
-keywords = ["remote", "pipe"]
 license = {text = "GPLv3"}
 description = "A set of useful python utilities"
 urls = {Homepage = "https://github.com/zwimer/zstdlib"}
