@@ -6,8 +6,8 @@ import signal
 
 @contextmanager
 def signal_cm(
-    signalnum: signal.Handlers | int,
-    handler: Callable,
+    signalnum: signal.Signals | int,
+    handler: signal.Handlers | Callable,
     *,
     disable_logging: bool = False,
 ):
