@@ -8,8 +8,7 @@ __all__ = ("BinaryIO", "TextIO", "io")
 
 
 class ProtectedFile:
-    """
-    A wrapper around an IO object that prevents access to certain attributes
+    """A wrapper around an IO object that prevents access to certain attributes
     If absolutely necessary, users can access the raw object directly via .raw
     """
 
@@ -18,14 +17,13 @@ class ProtectedFile:
 
     def __init__(self, raw: IOBase) -> None:
         """
-        :param raw: The raw IO object to wrap, users can access it directly if they must
+        Args:
+            raw: The raw IO object to wrap, users can access it directly if they must
         """
         self.raw: IOBase = raw
 
     def __getattr__(self, item):
-        """
-        Prevent access to certain attributes
-        """
+        """Prevent access to certain attributes"""
         if any(item.startswith(i) for i in self.PROTECTED_PREFIXES):
             raise AttributeError(f"Attribute {item} is protected")
         return getattr(self.raw, item)
@@ -37,8 +35,7 @@ class ProtectedFile:
 # See bug: https://github.com/pylint-dev/pylint/issues/9335
 # pylint: disable=undefined-variable
 class _IOWrapperBase[T: (str, bytes)]:
-    """
-    A base class for IO objects that adds additional functionality such as readuntil, unread, and peek
+    """A base class for IO objects that adds additional functionality such as readuntil, unread, and peek
     These classes are singletons with respect to their input object
     Note: This class takes ownership of the input object, do not use it elsewhere
     """
@@ -48,28 +45,26 @@ class _IOWrapperBase[T: (str, bytes)]:
     _wr_lock = RLock()
 
     def __new__(cls, f: IOBase, binary: bool) -> Self:
-        """
-        Create a new instance of cls for raw, or return an existing instance if one exists
-        """
+        """Create a new instance of cls for raw, or return an existing instance if one exists"""
         with cls._wr_lock:
             if (ret := cls._instances.get(f, None)) is None:
                 cls._instances[f] = (ret := super().__new__(cls))
         return ret
 
     def __init__(self, f: IOBase, *, binary: bool) -> None:
-        """
-        Initialize the IO object with a raw IO object
+        """Initialize the IO object with a raw IO object
         Note: This class takes ownership of the input object, do not use it elsewhere
-        :param f: The raw IO object to wrap
-        :param binary: If True, the IO object will read/write bytes, otherwise it will read/write strings
+
+        Args:
+            f: The raw IO object to wrap
+            binary: If True, the IO object will read/write bytes, otherwise it will read/write strings
         """
         self._buffer: T = (bytes if binary else str)()  # type: ignore
         self.f = ProtectedFile(f)
         self.lock = RLock()
 
     def read(self, size: int = -1) -> T:
-        """
-        Read up to size characters from self.raw or until EOF
+        """Read up to size characters from self.raw or until EOF
         If size is unspecified or -1, read until EOF
         """
         if size == 0:
@@ -82,8 +77,7 @@ class _IOWrapperBase[T: (str, bytes)]:
         return ret
 
     def readline(self) -> T:
-        """
-        Read a line from self.raw or until EOF
+        """Read a line from self.raw or until EOF
         Newline is included in the return value
         """
         with self.lock:
@@ -94,9 +88,7 @@ class _IOWrapperBase[T: (str, bytes)]:
             return ret + self.f.raw.readline()  # type: ignore
 
     def readlines(self) -> list[T]:
-        """
-        Read all lines from self.raw until EOF
-        """
+        """Read all lines from self.raw until EOF"""
         with self.lock:
             ret: list[T] = []
             while add := self.readline():
@@ -104,27 +96,26 @@ class _IOWrapperBase[T: (str, bytes)]:
             return ret
 
     def peek(self, size: int = -1) -> T:
-        """
-        Read size characters from self.raw or until EOF, without consuming the data
-        """
+        """Read size characters from self.raw or until EOF, without consuming the data"""
         with self.lock:
             self.unread(ret := self.read(size))
         return ret
 
     def unread(self, data: T) -> None:
-        """
-        Unread data back to the internal buffer
-        """
+        """Unread data back to the internal buffer"""
         with self.lock:
             self._buffer = data + self._buffer
 
     def readuntil(self, until: T, *, eof_ok: bool = True) -> T:
-        """
-        Read until until is found in f. If eof_ok is False, raise EOFError if until is not found before EOF.
-        :param until: The str/bytes to read until
-        :param inclusive: If True, the returned value will end with until
-        :param eof_ok: if False, raise EOFError if until is not found before EOF
-        :return: The data read from self.raw, up to and including until
+        """Read until until is found in f. If eof_ok is False, raise EOFError if until is not found before EOF.
+
+        Args:
+            until: The str/bytes to read until
+            inclusive: If True, the returned value will end with until
+            eof_ok: if False, raise EOFError if until is not found before EOF
+
+        Returns:
+            The data read from self.raw, up to and including until
         """
         if isinstance(until, str) ^ isinstance(self._buffer, str):
             raise TypeError("until: expected same type as buffer")
@@ -190,9 +181,7 @@ def _mode(f: IOBase, binary: bool | None) -> bool:
 
 
 class TextIO(_IOWrapperBase[str]):
-    """
-    A wrapper around TextIO objects that add additional functionality such as readuntil, unread, and peek
-    """
+    """A wrapper around TextIO objects that add additional functionality such as readuntil, unread, and peek"""
 
     def __new__(cls, f: IOBase):
         if not _mode(f, binary=False):
@@ -204,9 +193,7 @@ class TextIO(_IOWrapperBase[str]):
 
 
 class BinaryIO(_IOWrapperBase[bytes]):
-    """
-    A wrapper around BinaryIO objects that add additional functionality such as readuntil, unread, and peek
-    """
+    """A wrapper around BinaryIO objects that add additional functionality such as readuntil, unread, and peek"""
 
     def __new__(cls, f: IOBase):
         if _mode(f, binary=True):
@@ -218,8 +205,7 @@ class BinaryIO(_IOWrapperBase[bytes]):
 
 
 def io(raw: IOBase, binary: bool | None = None) -> TextIO | BinaryIO:
-    """
-    Convert an IO object to a TextIO or BinaryIO object
+    """Convert an IO object to a TextIO or BinaryIO object
         For raw to be valid, one of the three must be true:
         1. raw is an io.TextIOBase, io.RawIOBase, or io.BufferedIOBase object
         2. raw has a .mode string attribute

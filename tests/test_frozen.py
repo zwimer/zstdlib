@@ -98,9 +98,7 @@ class TestFrozen(unittest.TestCase):
         @frozen
         class F1:
             def __init__(self, a: int = 1, *, b: bool = False) -> None:
-                """
-                init doc
-                """
+                """init doc"""
 
         f1 = F1()
         self.assertEqual(f1.__init__.__doc__.strip(), "init doc")

@@ -19,8 +19,7 @@ def _no_subclass(*_, **__):
 
 
 class _SingletonType(type):
-    """
-    A thread-safe singleton metaclass
+    """A thread-safe singleton metaclass
     Singleton types may not be subclassed except for the base Singleton type
     """
 

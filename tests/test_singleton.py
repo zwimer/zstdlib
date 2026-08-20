@@ -50,8 +50,7 @@ class TestSingleton(unittest.TestCase):
             ST.instance(4)
 
     def test_multi_thread(self):
-        """
-        Ensure that Singleton is thread safe and that constructing an object doesn't delay other threads
+        """Ensure that Singleton is thread safe and that constructing an object doesn't delay other threads
         Technically this is more of a heuristic, but failing is extremely unlikely if this is thread safe
         Verifies that classes can construct concurrently, thread-safely, and only one instance is created
         """

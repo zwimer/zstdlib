@@ -10,10 +10,11 @@ class _State:
 
 
 def install(*, value=logging.DEBUG // 2, force: bool = False) -> None:
-    """
-    Install TRACE, logging.trace, getLogger().trace, etc into the logging module
-    :param value: The TRACE log level; default: logging.DEBUG // 2
-    :param force: If true, force install most errors
+    """Install TRACE, logging.trace, getLogger().trace, etc into the logging module
+
+    Args:
+        value: The TRACE log level; default: logging.DEBUG // 2
+        force: If true, force install most errors
     """
     with _State.lock:
         _install(value, force)
@@ -25,8 +26,7 @@ def install(*, value=logging.DEBUG // 2, force: bool = False) -> None:
 def _define_logger_trace(lc: type, method: str, value: int) -> None:
     # Define the function in the logger class, match name and help method style
     def trace(self, msg, *args, **kwargs) -> None:
-        """
-        Log 'msg % args' with severity 'TRACE'.
+        """Log 'msg % args' with severity 'TRACE'.
 
         To pass exception information, use the keyword argument exc_info with
         a true TRACE, e.g.
@@ -41,8 +41,7 @@ def _define_logger_trace(lc: type, method: str, value: int) -> None:
 def _define_logging_trace(method: str, value: int) -> None:
     # Define the function in the logging module, match name and help method style
     def trace(msg, *args, **kwargs):
-        """
-        Log a message with severity 'TRACE' on the root logger. If the logger
+        """Log a message with severity 'TRACE' on the root logger. If the logger
         has no handlers, call basicConfig() to add a console handler with a
         pre-defined format.
         """

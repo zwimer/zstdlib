@@ -16,9 +16,7 @@ def _cml(logger: logging.Logger, exit_func: Callable[[], Any]):
 
 
 class LeftBase:
-    """
-    A base class for tests that hijack loggers
-    """
+    """A base class for tests that hijack loggers"""
 
     _hijacked: ClassVar[set[logging.Logger]] = set()  # Set of all loggers that have ever been hijacked
     _qmap: ClassVar[dict[logging.Logger, queue.Queue[logging.LogRecord]]] = {}
@@ -30,7 +28,8 @@ class LeftBase:
     @classmethod
     def hijack(cls, name: str, reuse: bool = False, fmt: logging.Formatter | None = None):
         """
-        :return: A logger configured to write to an internal queue
+        Returns:
+            A logger configured to write to an internal queue
         """
         log = logging.getLogger(name)
         q: queue.Queue[logging.LogRecord] = queue.Queue()
@@ -48,9 +47,10 @@ class LeftBase:
 
     @classmethod
     def _restore(cls, logger: logging.Logger) -> None:
-        """
-        Restore the logger and read all messages from the queue
-        :return: The messages stored by the logger queue
+        """Restore the logger and read all messages from the queue
+
+        Returns:
+            The messages stored by the logger queue
         """
         if len(logger.handlers) != 1 or not isinstance(qh := logger.handlers[0], QueueHandler):
             raise RuntimeError("Logger not hijacked")

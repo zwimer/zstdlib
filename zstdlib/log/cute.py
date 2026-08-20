@@ -11,9 +11,7 @@ if TYPE_CHECKING:
 
 
 class CuteFormatter(Formatter):
-    """
-    A log formatter that can print log messages with colors.
-    """
+    """A log formatter that can print log messages with colors."""
 
     __slots__ = ("_cmap", "_color", "_dim_level", "_lvl_cmap", "_name_width", "colored")
     DEFAULT_CUTE_WIDTHS: ClassVar[dict[str, int]] = {"cute_levelname": 8, "cute_time": 23, "cute_name": 12}
@@ -36,20 +34,22 @@ class CuteFormatter(Formatter):
         cute_widths: dict[str, int] | None = None,
         **kwargs,
     ):
-        """
-        log_colors may be overridden, for example, trace logs are printed dimly
+        """log_colors may be overridden, for example, trace logs are printed dimly
         Do not modify cute_ parameters in the fmt string; they might have special formatting that is not visible
         Ex. %(cute_name)-8s should be done via cute_widths["cute_name"] = 8
         This is because cute_widths takes into account 0-width color codes when padding
         Level colors used are: DEFAULT_LEVEL_COLORS | level_colors
         Dimming of log messages is done for levels < dim_level
-        :param fmt: The format string to use for the log message; do not modify cute_ parameters
-        :param args: Passed to logging.Formatter
-        :param colored: If False, no colors will be used regardless of the colors parameter
-        :param colors: The colors to use for the given loggers, automatic for non-specified loggers
-        :param level_colors: The colors to use >= the given levels, automatic for non-specified loggers
-        :param cute_widths: The widths of the cute_ columns in the log message
-        :param kwargs: Passed to logging.Formatter
+
+        Args:
+            fmt: The format string to use for the log message; do not modify cute_ parameters
+            *args: Passed to logging.Formatter
+            colored: If False, no colors will be used regardless of the colors parameter
+            dim_level: Logs below this level will be dimly colored
+            colors: The colors to use for the given loggers, automatic for non-specified loggers
+            level_colors: The colors to use >= the given levels, automatic for non-specified loggers
+            cute_widths: The widths of the cute_ columns in the log message
+            **kwargs: Passed to logging.Formatter
         """
         colors = {} if colors is None else colors
         level_colors = {} if level_colors is None else level_colors
@@ -64,9 +64,7 @@ class CuteFormatter(Formatter):
         self.colored: bool = colored
 
     def update(self, colors: dict[str, Color]):
-        """
-        Set the colors for all loggers; enables colors if disabled
-        """
+        """Set the colors for all loggers; enables colors if disabled"""
         self._cmap |= colors
 
     def format(self, record: LogRecord) -> str:

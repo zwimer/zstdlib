@@ -10,9 +10,7 @@ _PREFIX = "\033["
 
 @unique
 class PureColor(Enum):
-    """
-    An enum of ansi color values
-    """
+    """An enum of ansi color values"""
 
     black = 30
     red = auto()
@@ -26,9 +24,7 @@ class PureColor(Enum):
 
 
 class RawColor:
-    """
-    A class that represents a color with all possible modifiers
-    """
+    """A class that represents a color with all possible modifiers"""
 
     __slots__ = ("background", "bright", "color", "value")
 
@@ -68,9 +64,7 @@ class RawColor:
 
 
 class _ColorMeta(type):
-    """
-    A metaclass that implements __getattr__ at the class level for Color
-    """
+    """A metaclass that implements __getattr__ at the class level for Color"""
 
     def __getattr__(cls, item: str) -> Color:
         try:
@@ -80,8 +74,7 @@ class _ColorMeta(type):
 
 
 class Color(metaclass=_ColorMeta):
-    """
-    Represents an Ansi color code; calling this on a string will apply the code to the string
+    """Represents an Ansi color code; calling this on a string will apply the code to the string
     Can be constructed via .factory; alternatively calling Color.<name> or Color(<name>) will
     automatically construct a color. Colors are constructed with attributes determined by
     splitting <name> on "_". Colors may be made bright by prepending "bright_" to the color name
@@ -104,10 +97,11 @@ class Color(metaclass=_ColorMeta):
     RESET: str = f"{_PREFIX}0m"
 
     def __init__(self, fmt: Self | RawColor | str = "", *, code: str = "") -> None:
-        """
-        Create a Color based on either the format or code, exactly one must be passed
-        :param fmt: A Color, RawColor, or string representation of this desired color
-        :param code: The ansi color code this object represents
+        """Create a Color based on either the format or code, exactly one must be passed
+
+        Args:
+            fmt: A Color, RawColor, or string representation of this desired color
+            code: The ansi color code this object represents
         """
         if fmt != "" and code != "":
             raise ValueError("code and fmt may not both be passed")
@@ -122,13 +116,15 @@ class Color(metaclass=_ColorMeta):
 
     def __call__(self, string: str) -> str:
         """
-        :return: The string color codes with the given ansi code
+        Returns:
+            The string color codes with the given ansi code
         """
         return f"{self.code}{string}{self.RESET}"
 
     def __add__(self, other: Self) -> Self:
         """
-        :return: A new color made by concatenating these two
+        Returns:
+            A new color made by concatenating these two
         """
         if not isinstance(other, type(self)):
             raise TypeError("Cannot add non-Color to Color")
@@ -136,13 +132,15 @@ class Color(metaclass=_ColorMeta):
 
     def __eq__(self, other: object) -> bool:
         """
-        :return: Whether the two colors are equal
+        Returns:
+            Whether the two colors are equal
         """
         return isinstance(other, type(self)) and self.code == other.code
 
     def __repr__(self) -> str:
         """
-        :return: The ansi color code this object represents
+        Returns:
+            The ansi color code this object represents
         """
         return f"<Color {self.code!r}>"
 
@@ -151,7 +149,8 @@ class Color(metaclass=_ColorMeta):
         cls, *, foreground: RawColor | None = None, background: RawColor | None = None, **modifiers
     ) -> Self:
         """
-        :return: The Ansi given the chosen color and various modifiers
+        Returns:
+            The Ansi given the chosen color and various modifiers
         """
         return cls(code=_generate_code(foreground, background, modifiers))
 
@@ -160,7 +159,8 @@ def _generate_code(
     foreground: RawColor | None, background: RawColor | None, modifiers: dict[str, bool]
 ) -> str:
     """
-    :return: The Ansi given the chosen color and various modifiers
+    Returns:
+        The Ansi given the chosen color and various modifiers
     """
     if any(bad := [i for i in modifiers if i not in MODIFIERS]):
         raise ValueError(f"Unknown modifier(s): {bad}")

@@ -11,11 +11,12 @@ def signal_cm(
     *,
     disable_logging: bool = False,
 ):
-    """
-    Install handler while this context manager is active, return to the old handler upon exit
-    :param signalnum: The signal to install the handler for
-    :param handler: The signal handler to install
-    :param disable_logging: Do not log anything if true
+    """Install handler while this context manager is active, return to the old handler upon exit
+
+    Args:
+        signalnum: The signal to install the handler for
+        handler: The signal handler to install
+        disable_logging: Do not log anything if true
     """
     log = getLogger(__name__)
     name: str = signal.Signals(signalnum).name

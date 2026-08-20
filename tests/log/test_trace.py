@@ -11,8 +11,7 @@ from .base import LeftBase
 class TestTrace(LeftBase, unittest.TestCase):
 
     def test_trace(self) -> None:
-        """
-        Avoid splitting up into multiple functions since trace.install() affects global state
+        """Avoid splitting up into multiple functions since trace.install() affects global state
         Keeping this as one function ensures that the tests are run in order
         """
         # Test bad installs

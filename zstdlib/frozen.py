@@ -37,8 +37,7 @@ class Freezable:
         return self._freezable_can_thaw_
 
     def freeze(self, *, permanent: bool = False):
-        """
-        Prevent further modifications to this object
+        """Prevent further modifications to this object
         This function can be called on an already frozen object
         """
         if permanent:
@@ -46,9 +45,7 @@ class Freezable:
         object.__setattr__(self, "_freezable_frozen_", True)
 
     def thaw(self):
-        """
-        Allow modifications to this object
-        """
+        """Allow modifications to this object"""
         if not self._freezable_can_thaw_:
             raise RuntimeError("Cannot thaw permanently frozen object")
         object.__setattr__(self, "_freezable_frozen_", False)
@@ -65,8 +62,7 @@ class Freezable:
 
 
 def frozen(arg: str | type):
-    """
-    A class decorator to permanently freeze a class after some method, __init__ by default
+    """A class decorator to permanently freeze a class after some method, __init__ by default
     If passed a string, will freeze after the method with that name
     """
 

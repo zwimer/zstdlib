@@ -12,8 +12,7 @@ auto = _Auto()
 
 
 class EnumType(type):
-    """
-    Metaclass for uninstantiable Enum classes with required annotations and unique values
+    """Metaclass for uninstantiable Enum classes with required annotations and unique values
     Enum entry names may not be prefixed with __ or be an EnumType._AutoValue
     These 'Enum' classes may not be modified after creation
     Items of annotation types in type_check will be type-checked
@@ -43,8 +42,7 @@ class EnumType(type):
         dupes_ok: bool,
         ans: dict[str, type | None],
     ) -> dict[str, tuple[type | None, Any]]:
-        """
-        Generate enum entries from attrs, checking for duplicates and missing annotations
+        """Generate enum entries from attrs, checking for duplicates and missing annotations
         Does not check for empty enum or type correctness
         Updates ans with new annotations
         """
@@ -133,8 +131,7 @@ class EnumType(type):
 
 
 class Enum(metaclass=EnumType, empty_ok=True):
-    """
-    An uninstantiable Enum base type
+    """An uninstantiable Enum base type
     Subclasses must provide type-annotated fields with unique values
     Fields may not be prefixed with "__"
     Derived classes will not be modifiable
@@ -143,8 +140,11 @@ class Enum(metaclass=EnumType, empty_ok=True):
 
 def entries(enum: Any) -> dict[str, tuple[type | None, Any]]:
     """
-    :param enum: A class whose metaclass is EnumType
-    :return: A dict mapping names to (type annotation, value) pairs
+    Args:
+        enum: A class whose metaclass is EnumType
+
+    Returns:
+        A dict mapping names to (type annotation, value) pairs
     If enum's type is not an EnumType, raises TypeError
     """
     if not isinstance(enum, EnumType):
@@ -154,8 +154,11 @@ def entries(enum: Any) -> dict[str, tuple[type | None, Any]]:
 
 def values(enum: Any) -> tuple[Any, ...]:
     """
-    :param enum: A class whose metaclass is EnumType
-    :return: A tuple of all values of enum
+    Args:
+        enum: A class whose metaclass is EnumType
+
+    Returns:
+        A tuple of all values of enum
     If enum's type is not an EnumType, raises TypeError
     """
     if not isinstance(enum, EnumType):

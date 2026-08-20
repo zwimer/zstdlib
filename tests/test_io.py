@@ -5,9 +5,7 @@ from zstdlib.io import ProtectedFile, BinaryIO, TextIO, io
 
 
 class RamFile(tempfile.SpooledTemporaryFile):
-    """
-    A file-like object that stores its contents in memory.
-    """
+    """A file-like object that stores its contents in memory."""
 
     rollover = None  # type: ignore
 
