@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "zstdlib"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
-    "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.14",
+	"Development Status :: 5 - Production/Stable",
+	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 ]
 license = {text = "GPLv3"}
 description = "A set of useful python utilities"
@@ -39,12 +39,12 @@ attr = "zstdlib.__version__"
 ignore-paths = '^tests/.*$'
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-    "unnecessary-lambda-assignment",
-    "method-cache-max-size-none",
-    "missing-module-docstring",
-    "too-few-public-methods",
-    "line-too-long",
-    "invalid-name"
+	"unnecessary-lambda-assignment",
+	"method-cache-max-size-none",
+	"missing-module-docstring",
+	"too-few-public-methods",
+	"line-too-long",
+	"invalid-name"
 ]
 
 [tool.black]
@@ -55,30 +55,30 @@ target-version = ["py314"]
 line-length = 110
 [tool.ruff.lint]
 ignore=[
-   "ANN401",
-   "D10", "D2", "D403", "D415",
-   "E731",
-   "I001",
-   "PLR0913", "PLR2004",
-   "S101",
-   "TID252",
+	"ANN401",
+	"D10", "D2", "D403", "D415",
+	"E731",
+	"I001",
+	"PLR0913", "PLR2004",
+	"S101",
+	"TID252",
 ]
 extend-select = [
-   "ANN",
-   "ARG",
-   "ASYNC",
-   "C4",
-   "D",
-   "DTZ",
-   "PERF",
-   "PGH",
-   "PIE",
-   "PL",
-   "PTH",
-   "RET",
-   "S",
-   "SIM",
-   "TID"
+	"ANN",
+	"ARG",
+	"ASYNC",
+	"C4",
+	"D",
+	"DTZ",
+	"PERF",
+	"PGH",
+	"PIE",
+	"PL",
+	"PTH",
+	"RET",
+	"S",
+	"SIM",
+	"TID"
 ]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
