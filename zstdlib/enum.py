@@ -1,5 +1,5 @@
+from typing import ClassVar, Never, Any
 from collections.abc import Iterator
-from typing import ClassVar, Any
 import annotationlib
 
 
@@ -21,6 +21,7 @@ class EnumType(type):
     """
 
     _AUTO_PREFIX = "Enum_Auto_"
+    __entries__: dict[str, tuple[type | None, Any]]  # Set by __new__ in attrs
     _TC_DEFAULT: ClassVar[set[type | None]] = {int, str, float, bool, complex, bytes, None, type(None)}
 
     class _AutoValue:
@@ -37,7 +38,7 @@ class EnumType(type):
 
     @classmethod
     def _gen_entries_and_annotations(
-        mcs,
+        mcs: type[EnumType],
         attrs: dict,
         dupes_ok: bool,
         ans: dict[str, type | None],
@@ -53,7 +54,7 @@ class EnumType(type):
             # If auto, ensure not annotated, then annotate
             if value is auto:
                 auto_val += 1
-                value = mcs._AutoValue(auto_val)
+                value = mcs._AutoValue(auto_val)  # noqa: PLW2901
                 if a_name in ans:
                     raise TypeError("Auto enum entries may not be type annotated")
                 ans[a_name] = mcs._AutoValue
@@ -77,16 +78,16 @@ class EnumType(type):
 
     # pylint: disable=too-many-arguments, dangerous-default-value, too-many-locals
     def __new__(
-        mcs,
-        name,
-        bases,
-        attrs,
+        mcs: type[EnumType],
+        name: str,
+        bases: tuple[type, ...],
+        attrs: dict[str, Any],
         *,
         empty_ok: bool = False,
         dupes_ok: bool = False,
         type_check: set[type | None] = _TC_DEFAULT,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> EnumType:
         # Disallow undesired instance methods
         if bad := attrs.keys() & {"__init__", "__new__", "__entries__"}:
             raise AttributeError(f"Illegal methods in Enum class: {', '.join(bad)}")
@@ -107,27 +108,23 @@ class EnumType(type):
         # Construct class
         attrs["__entries__"] = entries_  # For our usage later
         attrs["__init__"] = attrs["__new__"] = NotImplemented
-        ret = type.__new__(mcs, name, bases, attrs, **kwargs)
+        ret = super().__new__(mcs, name, bases, attrs, **kwargs)
         super().__setattr__(ret, "__annotations__", ans)  # Since we disable this method, use super()
         return ret
 
     # Disallow modification
 
-    def __delattr__(cls, *_):
+    def __delattr__(cls, *_: Any) -> Never:
         raise AttributeError("This class cannot be modified")
 
-    def __setattr__(cls, *_):
+    def __setattr__(cls, *_: Any) -> Never:
         raise AttributeError("This class cannot be modified")
 
-    # Class methods for the derived types
+    # Class methods for the types that have this as a metaclass
 
     def __iter__(cls) -> Iterator[str]:
         """Iterator over enum keys"""
-        yield from cls.__entries__  # type: ignore
-
-    def _disallow(cls):
-        """Disallow instantiation"""
-        raise AttributeError("This class may not be instantiated")
+        yield from cls.__entries__
 
 
 class Enum(metaclass=EnumType, empty_ok=True):
@@ -138,7 +135,7 @@ class Enum(metaclass=EnumType, empty_ok=True):
     """
 
 
-def entries(enum: Any) -> dict[str, tuple[type | None, Any]]:
+def entries(enum: EnumType) -> dict[str, tuple[type | None, Any]]:
     """
     Args:
         enum: A class whose metaclass is EnumType
@@ -149,7 +146,7 @@ def entries(enum: Any) -> dict[str, tuple[type | None, Any]]:
     """
     if not isinstance(enum, EnumType):
         raise TypeError("enum must have a metaclass of EnumType")
-    return dict(enum.__entries__)  # type: ignore[attr-defined]
+    return dict(enum.__entries__)
 
 
 def values(enum: Any) -> tuple[Any, ...]:
@@ -163,7 +160,7 @@ def values(enum: Any) -> tuple[Any, ...]:
     """
     if not isinstance(enum, EnumType):
         raise TypeError("enum must have a metaclass of EnumType")
-    return tuple(k[1] for k in enum.__entries__.values())  # type: ignore[attr-defined]
+    return tuple(k[1] for k in enum.__entries__.values())
 
 
 __all__ = ("Enum", "EnumType", "auto", "entries", "values")

@@ -2,6 +2,7 @@
 from collections.abc import Callable
 from threading import Thread, Lock
 from datetime import datetime
+from typing import Any
 from time import sleep
 import unittest
 
@@ -32,12 +33,12 @@ class TestSingleton(unittest.TestCase):
         with self.assertRaises(TypeError):  # Not ok to define __init_subclass__ in Singleton
 
             class ST3(Singleton):
-                def __init_subclass__(cls, **kwargs):
+                def __init_subclass__(cls, **_: Any) -> None:
                     pass
 
-    def test_instance(self):
+    def test_instance(self) -> None:
         class ST(Singleton):
-            def __init__(self, _):
+            def __init__(self, _: Any) -> None:
                 pass
 
         self.assertTrue(issubclass(NoInstanceError, TypeError))
@@ -47,9 +48,9 @@ class TestSingleton(unittest.TestCase):
         self.assertIs(ST.instance(), obj)
 
         with self.assertRaises(TypeError):
-            ST.instance(4)
+            ST.instance(4)  # type: ignore[call-arg]
 
-    def test_multi_thread(self):
+    def test_multi_thread(self) -> None:
         """Ensure that Singleton is thread safe and that constructing an object doesn't delay other threads
         Technically this is more of a heuristic, but failing is extremely unlikely if this is thread safe
         Verifies that classes can construct concurrently, thread-safely, and only one instance is created
@@ -95,11 +96,11 @@ class TestSingleton(unittest.TestCase):
 
         # Verify concurrent construction of ST1 and ST2
         class Fast(Singleton):
-            def __init__(self):
+            def __init__(self) -> None:
                 sleep(0.3)
 
         class Slow(Singleton):
-            def __init__(self):
+            def __init__(self) -> None:
                 sleep(0.8)
 
         run_all(simple("f1", Slow, 0), simple("f2", Fast, 0.2))
@@ -119,7 +120,7 @@ class TestSingleton(unittest.TestCase):
         class ST(Singleton):
             first = True
 
-            def __init__(self):
+            def __init__(self) -> None:
                 if self.first:
                     self.first = False
                     sleep(0.4)

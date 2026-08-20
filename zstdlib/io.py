@@ -1,8 +1,8 @@
 from io import BufferedIOBase, TextIOBase, RawIOBase, IOBase
 from weakref import WeakKeyDictionary
+from typing import Self, Any, cast
 from threading import RLock
 from itertools import chain
-from typing import Self
 
 __all__ = ("BinaryIO", "TextIO", "io")
 
@@ -22,7 +22,7 @@ class ProtectedFile:
         """
         self.raw: IOBase = raw
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         """Prevent access to certain attributes"""
         if any(item.startswith(i) for i in self.PROTECTED_PREFIXES):
             raise AttributeError(f"Attribute {item} is protected")
@@ -44,7 +44,7 @@ class _IOWrapperBase[T: (str, bytes)]:
     _instances: WeakKeyDictionary[IOBase, Self] = WeakKeyDictionary()
     _wr_lock = RLock()
 
-    def __new__(cls, f: IOBase, binary: bool) -> Self:
+    def __new__(cls, f: IOBase) -> Self:
         """Create a new instance of cls for raw, or return an existing instance if one exists"""
         with cls._wr_lock:
             if (ret := cls._instances.get(f, None)) is None:
@@ -59,12 +59,12 @@ class _IOWrapperBase[T: (str, bytes)]:
             f: The raw IO object to wrap
             binary: If True, the IO object will read/write bytes, otherwise it will read/write strings
         """
-        self._buffer: T = (bytes if binary else str)()  # type: ignore
+        self._buffer: T = (bytes if binary else str)()  # type: ignore[assignment]
         self.f = ProtectedFile(f)
         self.lock = RLock()
 
     def read(self, size: int = -1) -> T:
-        """Read up to size characters from self.raw or until EOF
+        """Read up to size characters from self.f.raw or until EOF
         If size is unspecified or -1, read until EOF
         """
         if size == 0:
@@ -77,7 +77,7 @@ class _IOWrapperBase[T: (str, bytes)]:
         return ret
 
     def readline(self) -> T:
-        """Read a line from self.raw or until EOF
+        """Read a line from self.f.raw or until EOF
         Newline is included in the return value
         """
         with self.lock:
@@ -85,10 +85,10 @@ class _IOWrapperBase[T: (str, bytes)]:
             ret = self._read_buffer(self._buffer.find(nl)) + self._read_buffer(1)
             if ret.endswith(nl):
                 return ret
-            return ret + self.f.raw.readline()  # type: ignore
+            return ret + cast(T, self.f.raw.readline())  # cast b/c IOBase's readline() -> bytes
 
     def readlines(self) -> list[T]:
-        """Read all lines from self.raw until EOF"""
+        """Read all lines from self.f.raw until EOF"""
         with self.lock:
             ret: list[T] = []
             while add := self.readline():
@@ -96,7 +96,7 @@ class _IOWrapperBase[T: (str, bytes)]:
             return ret
 
     def peek(self, size: int = -1) -> T:
-        """Read size characters from self.raw or until EOF, without consuming the data"""
+        """Read size characters from self.f.raw or until EOF, without consuming the data"""
         with self.lock:
             self.unread(ret := self.read(size))
         return ret
@@ -115,7 +115,7 @@ class _IOWrapperBase[T: (str, bytes)]:
             eof_ok: if False, raise EOFError if until is not found before EOF
 
         Returns:
-            The data read from self.raw, up to and including until
+            The data read from self.f.raw, up to and including until
         """
         if isinstance(until, str) ^ isinstance(self._buffer, str):
             raise TypeError("until: expected same type as buffer")
@@ -138,8 +138,8 @@ class _IOWrapperBase[T: (str, bytes)]:
     # Helper functions
     #
 
-    def _read(self, size) -> T:
-        ret: T = self.f.raw.read(size)  # type: ignore
+    def _read(self, size: int) -> T:
+        ret: T = cast(T, self.f.raw.read(size))  # cast b/c IOBase's read() -> bytes
         return ret if ret else self._buffer[:0]  # Some .read's can return None
 
     def _read_buffer(self, size: int = -1) -> T:
@@ -165,11 +165,12 @@ class _IOWrapperBase[T: (str, bytes)]:
     def __hash__(self) -> int:
         return hash((self.__class__, self.f))
 
-    __deepcopy__ = None  # type: ignore
-    __copy__ = None  # type: ignore
+    __deepcopy__ = None
+    __copy__ = None
 
 
 def _mode(f: IOBase, binary: bool | None) -> bool:
+    """Attempt to determine if f is binary or not, if known what it should be, error if different"""
     mode = getattr(f, "mode", "")
     binary = binary or "b" in mode or isinstance(f, (RawIOBase, BufferedIOBase))
     text = (binary is False) or (mode and "b" not in mode) or isinstance(f, TextIOBase)
@@ -183,24 +184,24 @@ def _mode(f: IOBase, binary: bool | None) -> bool:
 class TextIO(_IOWrapperBase[str]):
     """A wrapper around TextIO objects that add additional functionality such as readuntil, unread, and peek"""
 
-    def __new__(cls, f: IOBase):
-        if not _mode(f, binary=False):
+    def __new__(cls, f: IOBase) -> Self:
+        if not _mode(f, False):
             raise TypeError("raw should be a non-binary IO object")
-        return super().__new__(cls, f, binary=False)
+        return super().__new__(cls, f)
 
-    def __init__(self, f: IOBase):
+    def __init__(self, f: IOBase) -> None:
         super().__init__(f, binary=False)
 
 
 class BinaryIO(_IOWrapperBase[bytes]):
     """A wrapper around BinaryIO objects that add additional functionality such as readuntil, unread, and peek"""
 
-    def __new__(cls, f: IOBase):
-        if _mode(f, binary=True):
+    def __new__(cls, f: IOBase) -> Self:
+        if _mode(f, True):
             raise TypeError("raw should be a binary IO object")
-        return super().__new__(cls, f, binary=True)
+        return super().__new__(cls, f)
 
-    def __init__(self, f: IOBase):
+    def __init__(self, f: IOBase) -> None:
         super().__init__(f, binary=False)
 
 

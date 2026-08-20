@@ -1,3 +1,4 @@
+from typing import Any, overload
 from collections.abc import Callable
 
 _FN_ATTRS = (
@@ -15,7 +16,7 @@ _FN_ATTRS = (
 class Freezable:
     """A base class for objects that can be frozen"""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Avoid name mangling b/c we use object.__setattr__ etc. on these
         # Instead use unlikely to collide names for member variables
         super().__init__(*args, **kwargs)  # For MRO super classes
@@ -36,7 +37,7 @@ class Freezable:
         """Check if this object can be thawed or is unfrozen"""
         return self._freezable_can_thaw_
 
-    def freeze(self, *, permanent: bool = False):
+    def freeze(self, *, permanent: bool = False) -> None:
         """Prevent further modifications to this object
         This function can be called on an already frozen object
         """
@@ -44,13 +45,13 @@ class Freezable:
             object.__setattr__(self, "_freezable_can_thaw_", False)
         object.__setattr__(self, "_freezable_frozen_", True)
 
-    def thaw(self):
+    def thaw(self) -> None:
         """Allow modifications to this object"""
         if not self._freezable_can_thaw_:
             raise RuntimeError("Cannot thaw permanently frozen object")
         object.__setattr__(self, "_freezable_frozen_", False)
 
-    def __setattr__(self, key: str, value) -> None:
+    def __setattr__(self, key: str, value: Any) -> None:
         if getattr(self, "_freezable_frozen_", False):
             raise AttributeError("Cannot modify frozen object")
         super().__setattr__(key, value)
@@ -61,7 +62,13 @@ class Freezable:
         super().__delattr__(item)
 
 
-def frozen(arg: str | type):
+@overload
+def frozen[T](arg: str) -> Callable[[type[T]], type[T]]: ...
+@overload
+def frozen[T](arg: type[T]) -> type[T]: ...
+
+
+def frozen[T](arg: str | type[T]) -> Callable[[type[T]], type[T]] | type[T]:
     """A class decorator to permanently freeze a class after some method, __init__ by default
     If passed a string, will freeze after the method with that name
     """
@@ -79,18 +86,18 @@ def frozen(arg: str | type):
         original_setattr: Callable = cls.__setattr__
         original_delattr: Callable = cls.__delattr__
 
-        def new_method(self, *args, **kwargs):
+        def new_method(self: Any, *args: Any, **kwargs: Any) -> Any:
             ret = original_method(self, *args, **kwargs)
             # pylint: disable=protected-access
             self._freezable_frozen_ = True  # type: ignore[attr-defined]
             return ret
 
-        def __setattr__(self, key: str, value):
+        def __setattr__(self: Any, key: str, value: Any) -> Any:
             if getattr(self, "_freezable_frozen_", False):
                 raise AttributeError("Cannot modify frozen object")
             return original_setattr(self, key, value)
 
-        def __delattr__(self, item: str):
+        def __delattr__(self: Any, item: str) -> Any:
             if getattr(self, "_freezable_frozen_", False):
                 raise AttributeError("Cannot modify frozen object")
             return original_delattr(self, item)

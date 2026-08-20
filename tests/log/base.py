@@ -1,6 +1,6 @@
+from contextlib import AbstractContextManager, contextmanager
+from collections.abc import Callable, Iterator
 from logging.handlers import QueueHandler
-from contextlib import contextmanager
-from collections.abc import Callable
 from typing import ClassVar, Any
 from threading import Lock
 import logging
@@ -8,7 +8,7 @@ import queue
 
 
 @contextmanager
-def _cml(logger: logging.Logger, exit_func: Callable[[], Any]):
+def _cml(logger: logging.Logger, exit_func: Callable[[], Any]) -> Iterator[logging.Logger]:
     try:
         yield logger
     finally:
@@ -26,7 +26,9 @@ class LeftBase:
     messages: ClassVar[dict[logging.Logger, list[str]]] = {}
 
     @classmethod
-    def hijack(cls, name: str, reuse: bool = False, fmt: logging.Formatter | None = None):
+    def hijack(
+        cls, name: str, reuse: bool = False, fmt: logging.Formatter | None = None
+    ) -> AbstractContextManager[logging.Logger]:
         """
         Returns:
             A logger configured to write to an internal queue

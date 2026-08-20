@@ -1,5 +1,5 @@
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, Formatter
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Any
 from collections import defaultdict
 from zlib import adler32
 from copy import copy
@@ -25,15 +25,15 @@ class CuteFormatter(Formatter):
     # pylint: disable=dangerous-default-value,keyword-arg-before-vararg,too-many-arguments
     def __init__(
         self,
-        fmt="%(cute_levelname)s | %(cute_asctime)s | %(cute_name)s | %(cute_message)s",
-        *args,
+        fmt: str = "%(cute_levelname)s | %(cute_asctime)s | %(cute_name)s | %(cute_message)s",
+        *args: Any,
         colored: bool = True,
         dim_level: int = DEBUG,
         colors: dict[str, Color] | None = None,
         level_colors: dict[int, Color] | None = None,
         cute_widths: dict[str, int] | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """log_colors may be overridden, for example, trace logs are printed dimly
         Do not modify cute_ parameters in the fmt string; they might have special formatting that is not visible
         Ex. %(cute_name)-8s should be done via cute_widths["cute_name"] = 8
@@ -63,7 +63,7 @@ class CuteFormatter(Formatter):
             raise ValueError("cute_widths must only contain cute_ parameters")
         self.colored: bool = colored
 
-    def update(self, colors: dict[str, Color]):
+    def update(self, colors: dict[str, Color]) -> None:
         """Set the colors for all loggers; enables colors if disabled"""
         self._cmap |= colors
 

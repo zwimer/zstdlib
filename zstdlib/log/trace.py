@@ -1,15 +1,16 @@
 from threading import Lock
+from typing import Any
 import logging
 
 
 class _State:
-    __init__ = None  # type: ignore
+    __init__ = NotImplemented
     start: bool = False
     ready: bool = False
     lock = Lock()
 
 
-def install(*, value=logging.DEBUG // 2, force: bool = False) -> None:
+def install(*, value: int = logging.DEBUG // 2, force: bool = False) -> None:
     """Install TRACE, logging.trace, getLogger().trace, etc into the logging module
 
     Args:
@@ -25,7 +26,7 @@ def install(*, value=logging.DEBUG // 2, force: bool = False) -> None:
 
 def _define_logger_trace(lc: type, method: str, value: int) -> None:
     # Define the function in the logger class, match name and help method style
-    def trace(self, msg, *args, **kwargs) -> None:
+    def trace(self: Any, msg: str, *args: Any, **kwargs: Any) -> Any:
         """Log 'msg % args' with severity 'TRACE'.
 
         To pass exception information, use the keyword argument exc_info with
@@ -33,19 +34,19 @@ def _define_logger_trace(lc: type, method: str, value: int) -> None:
 
         logger.trace("Houston, we have a %s", "tiny problem", exc_info=True)
         """
-        self.log(value, msg, *args, **kwargs)
+        return self.log(value, msg, *args, **kwargs)
 
     setattr(lc, method, trace)
 
 
 def _define_logging_trace(method: str, value: int) -> None:
     # Define the function in the logging module, match name and help method style
-    def trace(msg, *args, **kwargs):
+    def trace(msg: str, *args: Any, **kwargs: Any) -> Any:
         """Log a message with severity 'TRACE' on the root logger. If the logger
         has no handlers, call basicConfig() to add a console handler with a
         pre-defined format.
         """
-        logging.log(value, msg, *args, **kwargs)  # noqa: LOG015
+        return logging.log(value, msg, *args, **kwargs)  # noqa: LOG015
 
     setattr(logging, method, trace)
 

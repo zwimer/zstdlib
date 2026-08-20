@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,unused-variable
+from typing import Self
 import unittest
 
 from zstdlib.enum import EnumType, Enum, entries, values, auto
@@ -63,7 +64,7 @@ class TestEnumType(unittest.TestCase):
             class ET1(metaclass=EnumType):
                 arg1: int = 1
 
-                def __init__(self):
+                def __init__(self) -> None:
                     pass
 
         with self.assertRaises(AttributeError):
@@ -71,8 +72,8 @@ class TestEnumType(unittest.TestCase):
             class ET2(metaclass=EnumType):
                 arg1: int = 1
 
-                def __new__(cls):
-                    pass
+                def __new__(cls) -> Self:
+                    return super().__new__(cls)
 
         class ET3(metaclass=EnumType):
             arg1: int = 0

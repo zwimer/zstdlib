@@ -4,7 +4,7 @@ from zstdlib import NotSetType, NotSet
 
 
 class TestNotSet(unittest.TestCase):
-    def test_not_set(self):
+    def test_not_set(self) -> None:
         self.assertIsInstance(NotSetType, type)
         self.assertIsInstance(NotSet, NotSetType)
         self.assertIsNot(None, NotSet)

@@ -1,5 +1,5 @@
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from collections.abc import Callable
 from logging import getLogger
 import signal
 
@@ -10,7 +10,7 @@ def signal_cm(
     handler: signal.Handlers | Callable,
     *,
     disable_logging: bool = False,
-):
+) -> Iterator[None]:
     """Install handler while this context manager is active, return to the old handler upon exit
 
     Args:

@@ -28,7 +28,9 @@ class RawColor:
 
     __slots__ = ("background", "bright", "color", "value")
 
-    def __init__(self, color: PureColor | str | int, *, bright: bool = False, background: bool = False):
+    def __init__(
+        self, color: PureColor | str | int, *, bright: bool = False, background: bool = False
+    ) -> None:
         self.color = PureColor(getattr(PureColor, color) if isinstance(color, str) else color)
         self.bright = bright
         self.background = background
@@ -137,6 +139,13 @@ class Color(metaclass=_ColorMeta):
         """
         return isinstance(other, type(self)) and self.code == other.code
 
+    def __hash__(self) -> int:
+        """
+        Returns:
+            A hash of the current color
+        """
+        return hash((type(self), self.code))
+
     def __repr__(self) -> str:
         """
         Returns:
@@ -146,7 +155,7 @@ class Color(metaclass=_ColorMeta):
 
     @classmethod
     def factory(
-        cls, *, foreground: RawColor | None = None, background: RawColor | None = None, **modifiers
+        cls, *, foreground: RawColor | None = None, background: RawColor | None = None, **modifiers: bool
     ) -> Self:
         """
         Returns:

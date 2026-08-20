@@ -51,6 +51,15 @@ class TestAnsiColor(unittest.TestCase):
         self.assertEqual(f"\033[31;42m{msg}\033[0m", Color.red_bg_green(msg))
         self.assertEqual(f"\033[1;3;32;101m{msg}\033[0m", Color.bg_bright_red_bold_italic_green(msg))
 
+    def test_hash(self) -> None:
+        c1 = Color("black")
+        c2 = Color("black")
+        other = Color("blue")
+        self.assertEqual(c1, c2)
+        self.assertNotEqual(c1, other)
+        self.assertEqual(hash(c1), hash(c2))
+        self.assertNotEqual(hash(c1), hash(other))
+
 
 if __name__ == "__main__":
     unittest.main()
