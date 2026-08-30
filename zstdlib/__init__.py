@@ -5,7 +5,7 @@ from .frozen import Freezable, frozen
 from .singleton import Singleton
 from .signal_cm import signal_cm
 from .enum import Enum, auto
-from . import lazy, log, io
+from . import macos, lazy, log, io
 
 __all__ = (
     "Enum",
@@ -18,5 +18,6 @@ __all__ = (
     "io",
     "lazy",
     "log",
+    "macos",
     "signal_cm",
 )
