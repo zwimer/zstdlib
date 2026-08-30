@@ -29,7 +29,8 @@ class LeftBase:
     def hijack(
         cls, name: str, reuse: bool = False, fmt: logging.Formatter | None = None
     ) -> AbstractContextManager[logging.Logger]:
-        """
+        """Create a hijacked logger
+
         Returns:
             A logger configured to write to an internal queue
         """

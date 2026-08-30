@@ -16,7 +16,7 @@ class ProtectedFile:
     __slots__ = ("raw",)
 
     def __init__(self, raw: IOBase) -> None:
-        """
+        """Create a ProtectedFile
         Args:
             raw: The raw IO object to wrap, users can access it directly if they must
         """

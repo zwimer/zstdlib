@@ -60,7 +60,7 @@ ignore=[
 	"E731",
 	"I001",
 	"PLR0913", "PLR2004",
-	"S101",
+	"S101", "S603",
 	"TID252",
 ]
 extend-select = [
@@ -87,7 +87,7 @@ convention = "google"
 "tests/*" = ["DTZ005", "PGH003", "PLW0108"]
 
 [tool.bandit]
-skips = ["B101", "B104", "B201"]
+skips = ["B101", "B104", "B201", "B404", "B603"]
 
 [tool.vulture]
 ignore_names = []

@@ -117,14 +117,18 @@ class Color(metaclass=_ColorMeta):
             self.code = RawColor._parse_color(fmt) if isinstance(fmt, str) else fmt.code
 
     def __call__(self, string: str) -> str:
-        """
+        """Args:
+            string: The string to color
+
         Returns:
             The string color codes with the given ansi code
         """
         return f"{self.code}{string}{self.RESET}"
 
     def __add__(self, other: Self) -> Self:
-        """
+        """Args:
+            other: The other string to color
+
         Returns:
             A new color made by concatenating these two
         """
@@ -133,31 +137,30 @@ class Color(metaclass=_ColorMeta):
         return type(self)(code=f"{self.code[:-1]};{other.code[len(_PREFIX):]}")
 
     def __eq__(self, other: object) -> bool:
-        """
+        """Args:
+            other: The color to compare against
+
         Returns:
             Whether the two colors are equal
         """
         return isinstance(other, type(self)) and self.code == other.code
 
     def __hash__(self) -> int:
-        """
-        Returns:
-            A hash of the current color
-        """
         return hash((type(self), self.code))
 
     def __repr__(self) -> str:
-        """
-        Returns:
-            The ansi color code this object represents
-        """
+        """Get the ansi color code this object represents"""
         return f"<Color {self.code!r}>"
 
     @classmethod
     def factory(
         cls, *, foreground: RawColor | None = None, background: RawColor | None = None, **modifiers: bool
     ) -> Self:
-        """
+        """Args:
+            foreground: The foreground color
+            background: The background color
+            **modifiers: Color modifiers to apply
+
         Returns:
             The Ansi given the chosen color and various modifiers
         """
@@ -167,7 +170,11 @@ class Color(metaclass=_ColorMeta):
 def _generate_code(
     foreground: RawColor | None, background: RawColor | None, modifiers: dict[str, bool]
 ) -> str:
-    """
+    """Args:
+        foreground: The foreground color
+        background: The background color
+        **modifiers: Color modifiers to apply
+
     Returns:
         The Ansi given the chosen color and various modifiers
     """
