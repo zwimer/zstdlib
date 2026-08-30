@@ -1,11 +1,11 @@
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
 from .singleton import Singleton
 from .signal_cm import signal_cm
 from .enum import Enum, auto
-from . import log, io
+from . import lazy, log, io
 
 __all__ = (
     "Enum",
@@ -16,6 +16,7 @@ __all__ = (
     "auto",
     "frozen",
     "io",
+    "lazy",
     "log",
     "signal_cm",
 )
