@@ -1,42 +1,54 @@
 from typing import NamedTuple, ParamSpec, ClassVar, TypeVar, Self
+from collections.abc import Callable, Iterable
 from subprocess import TimeoutExpired, Popen
-from collections.abc import Callable
 from multiprocessing import Process
+from contextlib import suppress
 from logging import getLogger
 from functools import wraps
 from threading import Lock
+from signal import Signals
 from pathlib import Path
 from os import getpid
 import atexit
 
 import osascript
 
-CAFFEINATE = "/usr/bin/caffeinate"  # This is a hard-coded location on macOS
+__all__ = ("Caffeinate", "osascript")
+
+CAFFEINATE = Path("/usr/bin/caffeinate")  # This is a hard-coded location on macOS
+KILL_WAIT_SECONDS: int = 60  # How long to .wait after .send_signal
+
 P = ParamSpec("P")
 R = TypeVar("R")
-_log = getLogger(__name__)
-
-
-__all__ = ("Caffeinate", "osascript")
 
 
 class Caffeinate:
     """A small wrapper class around macOS' CLI tool Caffeinate"""
 
-    _armed_lock: ClassVar[Lock] = Lock()
-    _armed: ClassVar[set[Self]] = set()
-    __slots__ = ("_cmd", "_data", "_lock", "_wait")
+    _finalizing: ClassVar[bool] = False
+    _instances_lock: ClassVar[Lock] = Lock()
+    _instances: ClassVar[set[Caffeinate]] = set()  # Self makes mypy upset here; maybe b/c of subclassing? :/
+    _log = getLogger(f"{__name__}.Caffeinate")
+
+    __slots__ = ("_cmd", "_data", "_lock", "block", "signal")
 
     class _Data(NamedTuple):
         owner: int
         proc: Popen
 
+    class SignalZeroError(ValueError):
+        """Raised when calling __enter__ or __exit__ on a Caffeinate instance with .signal == 0"""
+
+        def __init__(self) -> None:
+            msg = "The context manager is meant for managing the subprocess' lifetime, which is disable by .signal == 0, consider using .start() / .stop() instead."
+            super().__init__(msg)
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        cmd: list[Path | str | None] | None = None,
+        # Passed through to CLI tool
+        cmd: Iterable[Path | str | None] | None = None,
         *,
-        wait_for_cmd: bool = False,
         display: bool = False,
         idle: bool = False,
         disk: bool = False,
@@ -44,41 +56,56 @@ class Caffeinate:
         user: bool = False,
         timeout: int | None = None,
         wait: int | Popen | Process | None = None,
+        # For Caeffinate class itself
+        signal: Signals | int = Signals.SIGTERM,
+        block: bool = False,
     ) -> None:
         """Invokes the macOS Caffeinate CLI tool to prevent sleeping.
         Arguments are passed through to Caffeinate, descriptions are taken from the CLI tool; if they disagree with those found in `man caffeinate`, theirs are more likely to be correct.
+        No Caffeinate subprocess is started until .start() is called (or .__enter__ calls it)
+        All created children subprocesses will be cleaned up during atexit unless they have .signal == 0
+        After .stop()'d processes can .start() once more if desired
         Warning: If cmd is passed, re-invoking __enter__ after an __exit__ will cause Caffeinate to run again and thus the command will run again
+        Warning: Trying to use a Caffeinate with signal == 0 will raise a SignalZeroError as it is likely undesired to try to manage the lifetime of a process excluded from lifetime management
 
         Args:
             cmd: An optional CLI command (and arguments) to run under the Caffeinate process
-            wait_for_cmd: If True: Wait until cmd has finished executing before returning from __enter__
             display: If True: Create an assertion to prevent the display from sleeping.
             idle: If True: Create an assertion to prevent the system from idle sleeping.
             disk: If True: Create an assertion to prevent the disk from idle sleeping.
             system: If True: Create an assertion to prevent the system from sleeping. This assertion is valid only when system is running on AC power.
             user: If True: Create an assertion to declare that user is active. If the display is off, this option turns the display on and prevents the display from going into idle sleep. If a timeout is not specified with '-t' option, then this assertion is taken with a default of 5 second timeout.
-            timeout: Specifies the timeout value in seconds for which this assertion has to be valid. The assertion is dropped after the specified timeout. This option conflicts with cmd. Note: this timeout is passed to the Caffeinate CLI command, it is not enforced by python
-         with this command.
-            wait: Waits for the process with the specified pid to exit. Once the the process exits, the assertion is also released. This option conflicts with cmd.
+            timeout: Specifies the timeout value in seconds for which this assertion has to be valid. The assertion is dropped after the specified timeout. Timeout value is not used by the Caeffinate CLI when cmd is passed. Note: this timeout is passed to the Caffeinate CLI command, it is not enforced by python
+            wait: Waits for the process with the specified pid to exit. Once the the process exits, the assertion is also released. This option is ignored by the Caeffinate CLI when cmd is passed.
+            This option conflicts with cmd.
+            signal: The signal used to kill the child process (if cmd likely the process Caffeinate execs into). If 0, do not kill it
+            block: If True: Block until cmd has finished executing before returning from __enter__
         """
+        if not CAFFEINATE.exists():
+            raise NotImplementedError(f"This class is only available on macOS via: {CAFFEINATE}")
+        if (
+            isinstance(timeout, float)
+            or not isinstance(timeout, int | None)
+            or (timeout is not None and timeout < 1)
+        ):
+            raise TypeError("timeout must be a positive integer or None")
+        if not isinstance(wait, int | Popen | Process | None):
+            raise TypeError(f"wait is of the wrong type: {type(wait)}")
+        if not isinstance(signal, int | Signals):
+            msg = f"signal is of the wrong type: {type(signal)}{"; did you mean signal=0?" if signal is None else ""}"
+            raise TypeError(msg)
+        if isinstance(cmd, str | Path):
+            raise TypeError(f"cmd is of the wrong type: {type(cmd)}")
         if cmd is None:
-            if wait_for_cmd:
-                raise ValueError("wait_for_cmd requires cmd not be None")
+            if block:
+                raise ValueError("block requires cmd")
             cmd = []
-        elif not cmd:
-            raise ValueError("Empty cmd; did you mean to use None?")
-        elif timeout is not None:
-            raise ValueError("timeout may not be used with cmd")
-        elif wait is not None:
-            raise ValueError("wait may not be used with cmd")
         else:
             cmd = list(cmd)
+            if not cmd:
+                raise ValueError("Empty cmd iterable; did you mean to use cmd=None?")
         self._lock = Lock()
         self._data: Caffeinate._Data | None = None  # Have to hardcode "Caffeinate" for mypy :/
-        if isinstance(timeout, float):
-            raise TypeError("Float timeout not supported")
-        if timeout is not None and timeout < 1:
-            raise ValueError("Timeout should be a positive integer")
         wait = wait.pid if isinstance(wait, Popen | Process) else wait
         flags = [
             "-d" if display else None,
@@ -90,37 +117,48 @@ class Caffeinate:
             None if wait is None else f"-w {wait}",
         ]
         self._cmd = list(map(str, [CAFFEINATE] + [k for i in flags if i for k in i.split(" ")] + cmd))
-        self._wait = wait_for_cmd
+        self.signal = signal
+        self.block = block
 
-    def __enter__(self) -> Self:
-        """Start Caffeinate-ing"""
+    def start(self) -> None:
+        """Start Caffeinate-ing; nop if already started"""
         with self._lock:
             if self._data is not None:
-                raise RuntimeError("This context manager has already been entered")
-            self._data = self._Data(getpid(), Popen(self._cmd))
-            _log.debug("Created Popen(%s), pid=%s", self._cmd, self._data.proc.pid)
-        if self._wait:
+                return
+            pid = getpid()
+            with self._instances_lock:
+                if self._finalizing:
+                    raise PythonFinalizationError("No more new Caeffinate subprocesses are allowed")
+                self._data = self._Data(pid, Popen(self._cmd))  # pylint: disable=consider-using-with
+                self._instances.add(self)
+            self._log.debug("Created Popen(%s), pid=%s", self._cmd, self._data.proc.pid)
+        if self.block:
             self._data.proc.wait()
+
+    def stop(self) -> None:
+        """
+        Terminate the Caffeinate subprocess via self.signal; nop if not .stop()'d
+        .wait() will timeout after KILL_WAIT_SECONDS
+        """
+        self._stop(self.signal)
+
+    def __enter__(self) -> Self:
+        """Call .start(), if .signal == 0, raise a SignalZeroError, returns self"""
+        if not self.signal:
+            raise self.SignalZeroError()
+        self.start()
         return self
 
     def __exit__(self, *_: object) -> None:
-        with self._lock:
-            if self._data is None:
-                raise RuntimeError("Context managernever __enter__'d or already __exit__'d")
-            if getpid() != self._data.owner:
-                return
-            _log.debug("Reaping Caffeinate process: %s", self._data.proc.pid)
-            self._data.proc.terminate()
-            try:
-                self._data.proc.wait(timeout=1)
-            except TimeoutExpired:
-                _log.error("Caffeinate process didn't exit on .terminate()")
-                self._data.proc.kill()
-            self._data = None
+        """Calls .stop(); if called with .signal == 0, raise an SignalZeroError"""
+        signal = self.signal  # So user can't change it on us from another thread!
+        if not signal:  # Before atexit removal (so users change .signal later if desired)
+            raise self.SignalZeroError()
+        self._stop(signal)
 
     @classmethod
     def decorate(
-        cls, cmd: list[Path | str | None] | None = None, **caffeinate_kwargs: object
+        cls, cmd: list[Path | str | None] | None = None, **init_kwargs: object
     ) -> Callable[[Callable[P, R]], Callable[P, R]]:
         """A decorator to wrap a function with a Caffeinate instance
         Example:
@@ -133,66 +171,82 @@ class Caffeinate:
         def outer(f: Callable[P, R]) -> Callable[P, R]:
             @wraps(f)
             def inner(*args: P.args, **kwargs: P.kwargs) -> R:
-                with cls(cmd, **caffeinate_kwargs):  # type: ignore[arg-type]
+                with cls(cmd, **init_kwargs):  # type: ignore[arg-type]
                     return f(*args, **kwargs)
 
             return inner
 
         return outer
 
+    def __repr__(self) -> str:
+        pid = "NOT RUNNING" if self._data is None else self._data.proc.pid
+        return f"<Caffeinate: PID={pid}, flags={self._cmd[1:]}, signal={self.signal}, block={self.block}>"
+
+    # Rarely used methods
+
     @classmethod
-    def new(
-        cls,
-        cmd: list[Path | str | None] | None = None,
-        *,
-        survive_exit: bool = False,
-        **kwargs: object,
-    ) -> Self:
-        """Return an __enter__'d Caffeinate, whose __exit__ will run atexit
-        cmd and **kwargs are passed to __init__
-
-        Args:
-            cmd: Passed to Caffeinate
-            survive_exit: Do not kill this Caffeinate instance when this process exits
-            kwargs: Passed to Caffeinate
+    def kill_children(cls) -> None:
         """
-        ret = cls(cmd, **kwargs)  # type: ignore[arg-type]
-        _ = ret.__enter__()  # pylint: disable=unnecessary-dunder-call
-        if not survive_exit:
-            with cls._armed_lock:
-                cls._armed.add(ret)
-        return ret
+        Clean up child Caffeinate subprocesses started by this class using their requested signals
+        If any child has .signal == 0, that process is not killed
+        """
+        with cls._instances_lock:
+            remove = list(cls._instances)
+        cls._log.debug("Caffeinate: Cleaning up child subprocesses (if any)")
+        for i in remove:
+            with suppress(cls.SignalZeroError):
+                i.__exit__()  # modifies cls._instances
 
-    def survive_exit(self) -> None:
-        """Disable atexit death; only permitted for instances created by .new()"""
-        # pylint: disable=protected-access
-        with self._armed_lock:
-            if self not in self._armed:
-                msg = f"This instance was not created by {self.__class__.__name__}.new() or already called .survive_exit()"
-                raise ValueError(msg)
-            self._armed.remove(self)
-            assert self._data is not None
-            _log.debug("Disabled cleanup of caffeinate subprocess PID=%s", self._data.proc.pid)
+    @classmethod
+    def forget_signal_zero_children(cls) -> None:
+        """
+        This method exists to allow long running processes that
+        endlessly spawns children with .signal == 0 to avoid memory leaks
+        Normally these instances are stored until atexit in case .signal changes before then
+        This methods forgets about all children with .signal == 0 (frees up the memory used storing them)
+        This cannot be undone; avoid callng this unless you need the memory
+        Warning: This does not remove any other references or destroy the instance
+        """
+        with cls._instances_lock:
+            cls._instances -= {i for i in cls._instances if not i.signal}
+
+    # Private methods
+
+    def _stop(self, signal: int | Signals) -> None:
+        """Workhose of .stop()"""
+        with self._lock:
+            if self._data is None:
+                return
+            # After this point, ensure no second removal attempt happens at atexit
+            with self._instances_lock:
+                self._instances.discard(self)
+            if getpid() != self._data.owner:  # We don't care about these
+                return
+            if self._data.proc.poll() is None:  # No need to kill it if it's already dead
+                self._log.debug("Cleaning up process %s with signal %s", self._data.proc.pid, signal)
+                self._data.proc.send_signal(signal)
+            try:
+                self._data.proc.wait(timeout=KILL_WAIT_SECONDS)
+            except TimeoutExpired:
+                # Technically, Caffeinate itself forks and its child remains Caffeinate while the
+                # parent becomes the cmd process, so say subprocess instead of Caffeinate processes
+                self._log.error(
+                    "subprocess (PID=%s) didn't exit on .send_signal(%s)", self._data.proc.pid, signal
+                )
+                raise
+            self._data = None
 
     @classmethod
     def _atexit(cls) -> None:
-        """Clean up child Caffeinate subprocesses started by this class"""
-        # pylint: disable=protected-access
-        pid = getpid()
-        _log.debug("Cleaning up all owned Caffeinate subprocesses started this process (PID=%s)", pid)
-        with cls._armed_lock:
-            for i in cls._armed:
-                if i._data is None:
-                    _log.error("Unentered Caffeinate process in ._armed; this should never happen")
-                    continue
-                if i._data.owner == pid:
-                    i.__exit__()
-            cls._armed.clear()
-
-    def __repr__(self) -> str:
-        if self._data is None:
-            return f"<Caffeinate: NOT RUNNING, flags={self._cmd[1:]}>"
-        return f"<Caffeinate: PID={self._data.proc.pid}, flags={self._cmd[1:]}>"
+        """
+        Never invoke this manually; it is called by atexit
+        Disallows instance constructon then invokes kill_chilren()
+        """
+        with cls._instances_lock:
+            cls._finalizing = True
+            cls._log.debug("Disallowing future child Caffeinate subprocesses")
+        cls.kill_children()
 
 
+assert 0 not in Signals, "0 not expected in signal.Signals as it's a nop"
 atexit.register(Caffeinate._atexit)  # pylint: disable=protected-access
