@@ -136,7 +136,8 @@ class Enum(metaclass=EnumType, empty_ok=True):
 
 
 def entries(enum: EnumType) -> dict[str, tuple[type | None, Any]]:
-    """Args:
+    """
+    Args:
         enum: A class whose metaclass is EnumType
 
     Returns:
@@ -149,7 +150,8 @@ def entries(enum: EnumType) -> dict[str, tuple[type | None, Any]]:
 
 
 def values(enum: Any) -> tuple[Any, ...]:
-    """Args:
+    """
+    Args:
         enum: A class whose metaclass is EnumType
 
     Returns:

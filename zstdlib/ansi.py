@@ -117,7 +117,8 @@ class Color(metaclass=_ColorMeta):
             self.code = RawColor._parse_color(fmt) if isinstance(fmt, str) else fmt.code
 
     def __call__(self, string: str) -> str:
-        """Args:
+        """
+        Args:
             string: The string to color
 
         Returns:
@@ -126,7 +127,8 @@ class Color(metaclass=_ColorMeta):
         return f"{self.code}{string}{self.RESET}"
 
     def __add__(self, other: Self) -> Self:
-        """Args:
+        """
+        Args:
             other: The other string to color
 
         Returns:
@@ -137,7 +139,8 @@ class Color(metaclass=_ColorMeta):
         return type(self)(code=f"{self.code[:-1]};{other.code[len(_PREFIX):]}")
 
     def __eq__(self, other: object) -> bool:
-        """Args:
+        """
+        Args:
             other: The color to compare against
 
         Returns:
@@ -156,7 +159,8 @@ class Color(metaclass=_ColorMeta):
     def factory(
         cls, *, foreground: RawColor | None = None, background: RawColor | None = None, **modifiers: bool
     ) -> Self:
-        """Args:
+        """
+        Args:
             foreground: The foreground color
             background: The background color
             **modifiers: Color modifiers to apply
@@ -170,10 +174,11 @@ class Color(metaclass=_ColorMeta):
 def _generate_code(
     foreground: RawColor | None, background: RawColor | None, modifiers: dict[str, bool]
 ) -> str:
-    """Args:
+    """
+    Args:
         foreground: The foreground color
         background: The background color
-        **modifiers: Color modifiers to apply
+        modifiers: Color modifiers to apply
 
     Returns:
         The Ansi given the chosen color and various modifiers
