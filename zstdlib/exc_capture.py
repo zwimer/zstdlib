@@ -52,11 +52,13 @@ class ExcDelay(ExcCapture):
     ) -> None:
         """
         Args:
-            exc_t: The exception type the capture function should capture, if None it must be passed to the capture function directly
             msg: The exception group message
+            exc_t: The exception type the capture function should capture, if None it must be passed to the capture function directly
         """
+        if not isinstance(msg, str):
+            raise TypeError(f"Invalid message type: {type(msg)}")
+        self._msg: str = msg
         super().__init__(exc_t)
-        self._msg = msg
 
     def __enter__(self) -> CaptureFType:
         """Return the capture function to use"""

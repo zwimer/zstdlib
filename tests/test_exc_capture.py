@@ -64,6 +64,10 @@ class TestLazy(unittest.TestCase):
             with capture():
                 raise RuntimeError()
             raise ValueError()
+        # msg
+        _ = ExcDelay("")
+        with self.assertRaises(TypeError):
+            ExcDelay(RuntimeError)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":
