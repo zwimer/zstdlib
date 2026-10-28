@@ -41,8 +41,8 @@ class _IOWrapperBase[T: (str, bytes)]:
     """
 
     __slots__ = ("_buffer", "_eof", "f", "lock")
-    _instances: WeakKeyDictionary[IOBase, Self] = WeakKeyDictionary()
-    _wr_lock = RLock()
+    _instances: WeakKeyDictionary[IOBase, Self] = WeakKeyDictionary()  # noqa: RUF012
+    _wr_lock: RLock = RLock()
 
     def __new__(cls, f: IOBase) -> Self:
         """Create a new instance of cls for raw, or return an existing instance if one exists"""

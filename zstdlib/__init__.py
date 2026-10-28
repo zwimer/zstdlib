@@ -1,5 +1,6 @@
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
+from .exc_capture import ExcCapture, ExcDelay
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
 from .singleton import Singleton
@@ -9,6 +10,8 @@ from . import macos, lazy, log, io
 
 __all__ = (
     "Enum",
+    "ExcCapture",
+    "ExcDelay",
     "Freezable",
     "NotSet",
     "NotSetType",
