@@ -19,6 +19,14 @@ class TestLazy(unittest.TestCase):
         with self.assertRaises(ValueError), rt.capture():
             raise ValueError()
         self.assertEqual(len(rt.errors), 1)
+        # previous
+        with rt.capture():
+            pass
+        self.assertIs(rt.previous, None)
+        test_err = RuntimeError("test")
+        with rt.capture():
+            raise test_err
+        self.assertEqual(rt.previous, test_err)
         # capture's exc_t
         rt = ExcCapture(RuntimeError)
         with self.assertRaises(RuntimeError), rt.capture(ValueError):
@@ -68,6 +76,15 @@ class TestLazy(unittest.TestCase):
         _ = ExcDelay("")
         with self.assertRaises(TypeError):
             ExcDelay(RuntimeError)  # type: ignore[arg-type]
+        # armed
+        with ExcDelay("", RuntimeError, armed=False) as capture, capture():
+            raise RuntimeError()
+        ed = ExcDelay("", RuntimeError, armed=True)
+        with ed as capture, capture():
+            ed.armed = False
+            raise RuntimeError()
+        with self.assertRaises(ExceptionGroup), ExcDelay("", RuntimeError, armed=True) as capture, capture():
+            raise RuntimeError()
 
 
 if __name__ == "__main__":
