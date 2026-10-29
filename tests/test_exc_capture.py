@@ -79,9 +79,8 @@ class TestLazy(unittest.TestCase):
         # armed
         with ExcDelay("", RuntimeError, armed=False) as capture, capture():
             raise RuntimeError()
-        ed = ExcDelay("", RuntimeError, armed=True)
-        with ed as capture, capture():
-            ed.armed = False
+        with ExcDelay("", RuntimeError, armed=True) as capture, capture():
+            capture.armed = False
             raise RuntimeError()
         with self.assertRaises(ExceptionGroup), ExcDelay("", RuntimeError, armed=True) as capture, capture():
             raise RuntimeError()

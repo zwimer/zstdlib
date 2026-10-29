@@ -1,17 +1,11 @@
 from contextlib import AbstractContextManager, contextmanager
 from collections.abc import Iterator
-from typing import Protocol
+from typing import Self
 
 __all__ = ("ExcCapture", "ExcDelay")
 
 
 type EXC_T = type[BaseException] | tuple[type[BaseException]]
-
-
-class CaptureFType(Protocol):
-    """The type of the capture function (used for type checking)"""
-
-    def __call__(self, exc_t: EXC_T | None = None) -> AbstractContextManager[None]: ...
 
 
 class ExcCapture:
@@ -45,6 +39,10 @@ class ExcCapture:
             self.previous = e
             self.errors.append(e)
 
+    def __call__(self, exc_t: EXC_T | None = None) -> AbstractContextManager[None]:
+        """An alias for .capture"""
+        return self.capture(exc_t)
+
 
 class ExcDelay(ExcCapture):
     """A context manager subclass of ExcCapture that raises on exit if errors are captured"""
@@ -70,9 +68,9 @@ class ExcDelay(ExcCapture):
         self._msg: str = msg
         super().__init__(exc_t)
 
-    def __enter__(self) -> CaptureFType:
+    def __enter__(self) -> Self:
         """Return the capture function to use"""
-        return self.capture
+        return self
 
     def __exit__(self, type_: type[BaseException] | None, *_: object) -> None:
         """Raise an ExceptionGroup (or BaseExceptionGroup depending on exc_t) if self.errors"""
