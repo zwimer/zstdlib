@@ -46,20 +46,20 @@ class TestTrace(LeftBase, unittest.TestCase):
         # Root check
         with self.hijack("") as log:
             old = log.getEffectiveLevel()
-            # pylint: disable=not-callable
+            # pylint: disable-next=not-callable
             logging.trace("test1")  # type: ignore[misc]
             log.setLevel(logging.DEBUG)
-            # pylint: disable=not-callable
+            # pylint: disable-next=not-callable
             logging.trace("test2")  # type: ignore[misc]
             log.setLevel(old)
         self.assertEqual(self.messages[log], ["test1"])
         # Logger check
         with self.hijack("TestTrace.t1") as log:
             old = log.getEffectiveLevel()
-            # pylint: disable=not-callable
+            # pylint: disable-next=not-callable
             log.trace("test3")
             log.setLevel(logging.DEBUG)
-            # pylint: disable=not-callable
+            # pylint: disable-next=not-callable
             log.trace("test4")
             log.setLevel(old)
         self.assertEqual(self.messages[log], ["test3"])

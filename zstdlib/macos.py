@@ -43,7 +43,7 @@ class Caffeinate:
             msg = "The context manager is meant for managing the subprocess' lifetime, which is disable by .signal == 0, consider using .start() / .stop() instead."
             super().__init__(msg)
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         # Passed through to CLI tool

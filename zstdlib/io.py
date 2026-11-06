@@ -32,8 +32,6 @@ class ProtectedFile:
         return hash(self.raw)
 
 
-# See bug: https://github.com/pylint-dev/pylint/issues/9335
-# pylint: disable=undefined-variable
 class _IOWrapperBase[T: (str, bytes)]:
     """A base class for IO objects that adds additional functionality such as readuntil, unread, and peek
     These classes are singletons with respect to their input object

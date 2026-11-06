@@ -88,7 +88,7 @@ def frozen[T](arg: str | type[T]) -> Callable[[type[T]], type[T]] | type[T]:
 
         def new_method(self: Any, *args: Any, **kwargs: Any) -> Any:
             ret = original_method(self, *args, **kwargs)
-            # pylint: disable=protected-access
+            # pylint: disable-next=protected-access
             self._freezable_frozen_ = True  # type: ignore[attr-defined]
             return ret
 

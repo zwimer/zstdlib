@@ -22,7 +22,7 @@ class CuteFormatter(Formatter):
         CRITICAL: Color.bright_red_bg_yellow,
     }
 
-    # pylint: disable=dangerous-default-value,keyword-arg-before-vararg,too-many-arguments
+    # pylint: disable-next=keyword-arg-before-vararg,too-many-arguments
     def __init__(
         self,
         fmt: str = "%(cute_levelname)s | %(cute_asctime)s | %(cute_name)s | %(cute_message)s",

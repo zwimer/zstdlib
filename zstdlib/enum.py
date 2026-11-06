@@ -76,7 +76,7 @@ class EnumType(type):
                 raise ValueError("Non-auto enum entries must be type annotated") from None
         return ret
 
-    # pylint: disable=too-many-arguments, dangerous-default-value, too-many-locals
+    # pylint: disable-next=too-many-arguments, dangerous-default-value, too-many-locals
     def __new__(
         mcs: type[EnumType],
         name: str,
