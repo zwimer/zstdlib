@@ -17,6 +17,7 @@ __all__ = ("Caffeinate", "osascript")
 
 CAFFEINATE = Path("/usr/bin/caffeinate")  # This is a hard-coded location on macOS
 KILL_WAIT_SECONDS: int = 60  # How long to .wait after .send_signal
+_CAFFEINATE_ENABLED = CAFFEINATE.exists()
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -81,7 +82,7 @@ class Caffeinate:
             signal: The signal used to kill the child process (if cmd likely the process Caffeinate execs into). If 0, do not kill it
             block: If True: Block until cmd has finished executing before returning from __enter__
         """
-        if not CAFFEINATE.exists():
+        if not _CAFFEINATE_ENABLED:
             raise NotImplementedError(f"This class is only available on macOS via: {CAFFEINATE}")
         if (
             isinstance(timeout, float)
@@ -249,4 +250,5 @@ class Caffeinate:
 
 
 assert 0 not in Signals, "0 not expected in signal.Signals as it's a nop"
-atexit.register(Caffeinate._atexit)  # pylint: disable=protected-access
+if _CAFFEINATE_ENABLED:
+    atexit.register(Caffeinate._atexit)  # pylint: disable=protected-access

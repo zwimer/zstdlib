@@ -1,4 +1,4 @@
-__version__ = "0.10.3"
+__version__ = "0.10.4"
 
 from .exc_capture import ExcCapture, ExcDelay
 from .not_set import NotSetType, NotSet
