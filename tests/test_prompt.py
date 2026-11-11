@@ -4,14 +4,13 @@ import unittest
 
 from zstdlib.prompt import prompt_until, prompt_for, yn_prompt
 
-
 mock_input = lambda *x: patch("builtins.input", side_effect=x)
 mock_print = lambda: patch("builtins.print")
 
 
 def want_have(mock_p: MagicMock, msg: str, n: int) -> tuple[list[str], list[str]]:
     if any(len(i.args) != 1 or i.kwargs for i in mock_p.call_args_list):
-        return False
+        raise ValueError("Unexpected print output")
     return [i.args[0] for i in mock_p.call_args_list], [msg] * n
 
 
@@ -53,7 +52,7 @@ class TestPromptUntil(unittest.TestCase):
 
 
 class TestPromptFor(unittest.TestCase):
-    out = "Type continue "
+    out = "Continue? [continue] "
 
     def test_basic(self) -> None:
         with mock_print() as stdout, mock_input("test", "test", "cOntinue") as stdout:
@@ -69,8 +68,9 @@ class TestPromptFor(unittest.TestCase):
             self.assertFalse(prompt_for(eof=True))
             self.assertEqual(*want_have(stdout, self.out, 2))
 
+
 class TestYNPrompt(unittest.TestCase):
-    out = "Yes or no? [yn] "
+    out = "Continue? [yn] "
 
     def test_basic(self) -> None:
         with mock_print() as stdout, mock_input("test", "yes", "y") as stdout:
@@ -80,13 +80,33 @@ class TestYNPrompt(unittest.TestCase):
             self.assertIs(yn_prompt(), False)
             self.assertEqual(*want_have(stdout, self.out, 3))
 
-    def test_yes_no(self) -> None:
-        out = "Yes or no? [yes/no] "
+    def test_not_short(self) -> None:
+        out = "Continue? [yes/no] "
         with mock_print() as stdout, mock_input("test", "y", "yes") as stdout:
-            self.assertTrue(yn_prompt(yes_no=True))
+            self.assertTrue(yn_prompt(short=False))
             self.assertEqual(*want_have(stdout, out, 3))
         with mock_print() as stdout, mock_input("test", "n", "no") as stdout:
-            self.assertFalse(yn_prompt(yes_no=True))
+            self.assertFalse(yn_prompt(short=False))
+            self.assertEqual(*want_have(stdout, out, 3))
+
+    def test_empty(self) -> None:
+        with mock_print() as stdout, mock_input("test", "") as stdout:
+            with self.assertRaises(StopIteration):
+                yn_prompt()
+            self.assertEqual(*want_have(stdout, self.out, 3))
+        with mock_print() as stdout, mock_input("test", "") as stdout:
+            self.assertFalse(yn_prompt(empty_ok=True))
+            self.assertEqual(*want_have(stdout, self.out, 2))
+
+    def test_empty_not_short(self) -> None:
+        out = "Continue? [yes/no] "
+        with mock_print() as stdout, mock_input("test", "") as stdout:
+            with self.assertRaises(StopIteration):
+                yn_prompt(short=False)
+            self.assertEqual(*want_have(stdout, out, 3))
+        with mock_print() as stdout, mock_input("test", "") as stdout:
+            with self.assertRaises(StopIteration):
+                yn_prompt(short=False, empty_ok=True)
             self.assertEqual(*want_have(stdout, out, 3))
 
     def test_eof(self) -> None:

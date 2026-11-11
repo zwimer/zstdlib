@@ -1,7 +1,7 @@
-__version__ = "0.10.6"
+__version__ = "0.10.7"
 
+from .prompt import prompt_until, prompt_for, yn_prompt
 from .exc_capture import ExcCapture, ExcDelay
-from .prompt import prompt_for, yn_prompt
 from .hybridmethod import hybridmethod
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
@@ -26,6 +26,7 @@ __all__ = (
     "log",
     "macos",
     "prompt_for",
+    "prompt_until",
     "signal_cm",
     "yn_prompt",
 )

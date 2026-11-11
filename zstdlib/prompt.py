@@ -4,6 +4,7 @@ from shlex import quote
 
 __all__ = ("prompt_for", "prompt_until", "yn_prompt")
 
+
 @overload
 def prompt_until(
     msg: str,
@@ -54,20 +55,22 @@ def prompt_until(
 
 
 def prompt_for(
-    continue_str: str = "continue",
     *,
+    msg: str = "Continue?",
+    key: str = "continue",
     ignore_case: bool = True,
     eof: bool = False,
     ctrl_c: bool = False,
 ) -> bool:
     """
-    Prompt the user to contine by entering continue_str, whitespace is stripped
+    Prompt the user with msg to contine by entering key, whitespace is stripped
     If eof/ctrl_c, interpret EOFError/KeyboardInterrupt as commands to return False
+    Returns True otherwise
     """
     ret = prompt_until(
-        f"Type {quote(continue_str)} ",
+        f"{msg} [{quote(key)}] ",
         ignore_case=ignore_case,
-        until={continue_str},
+        until={key},
         eof=eof,
         ctrl_c=ctrl_c,
     )
@@ -75,19 +78,21 @@ def prompt_for(
 
 
 def yn_prompt(
-    msg: str = "Yes or no?",
+    msg: str = "Continue?",
     *,
+    empty_ok: bool = False,
     eof: bool = False,
     ctrl_c: bool = False,
-    yes_no: bool = False,
+    short: bool = True,
 ) -> bool:
     """
-    Prompt the user to select from [yn], or [yes/no] if [yes/no], whitespace is stripped
+    Prompt the user to select from [yn] if short else [yes/no], whitespace is stripped
     If eof/ctrl_c, interpret EOFError/KeyboardInterrupt as commands to return False
+    If empty_ok, "" is considered the same as "n"; empty_ok is a nop when not short
     """
     return prompt_until(
-        f"{msg} [{"yes/no" if yes_no else "yn"}] ",
-        until=("yes", "no") if yes_no else ("y", "n"),
+        f"{msg} [{"yn" if short else "yes/no"}] ",
+        until=(("y", "n") + (("",) if empty_ok else ())) if short else ("yes", "no"),
         eof=eof,
         ctrl_c=ctrl_c,
     ) in ("y", "yes")
