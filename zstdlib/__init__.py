@@ -1,6 +1,7 @@
-__version__ = "0.10.5"
+__version__ = "0.10.6"
 
 from .exc_capture import ExcCapture, ExcDelay
+from .prompt import prompt_for, yn_prompt
 from .hybridmethod import hybridmethod
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
@@ -24,5 +25,7 @@ __all__ = (
     "lazy",
     "log",
     "macos",
+    "prompt_for",
     "signal_cm",
+    "yn_prompt",
 )
