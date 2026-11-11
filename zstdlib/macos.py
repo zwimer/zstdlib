@@ -1,4 +1,4 @@
-from typing import NamedTuple, ParamSpec, ClassVar, TypeVar, Self
+from typing import NamedTuple, Final, ClassVar, Self
 from collections.abc import Callable, Iterable
 from subprocess import TimeoutExpired, Popen
 from multiprocessing import Process
@@ -17,15 +17,12 @@ __all__ = ("Caffeinate", "osascript")
 
 CAFFEINATE = Path("/usr/bin/caffeinate")  # This is a hard-coded location on macOS
 KILL_WAIT_SECONDS: int = 60  # How long to .wait after .send_signal
-_CAFFEINATE_ENABLED = CAFFEINATE.exists()
-
-P = ParamSpec("P")
-R = TypeVar("R")
 
 
 class Caffeinate:
     """A small wrapper class around macOS' CLI tool Caffeinate"""
 
+    SUPPORTED: Final[ClassVar[bool]] = CAFFEINATE.exists()
     _finalizing: ClassVar[bool] = False
     _instances_lock: ClassVar[Lock] = Lock()
     _instances: ClassVar[set[Caffeinate]] = set()  # Self makes mypy upset here; maybe b/c of subclassing? :/
@@ -57,7 +54,7 @@ class Caffeinate:
         user: bool = False,
         timeout: int | None = None,
         wait: int | Popen | Process | None = None,
-        # For Caeffinate class itself
+        # For Caffeinate class itself
         signal: Signals | int = Signals.SIGTERM,
         block: bool = False,
     ) -> None:
@@ -76,13 +73,13 @@ class Caffeinate:
             disk: If True: Create an assertion to prevent the disk from idle sleeping.
             system: If True: Create an assertion to prevent the system from sleeping. This assertion is valid only when system is running on AC power.
             user: If True: Create an assertion to declare that user is active. If the display is off, this option turns the display on and prevents the display from going into idle sleep. If a timeout is not specified with '-t' option, then this assertion is taken with a default of 5 second timeout.
-            timeout: Specifies the timeout value in seconds for which this assertion has to be valid. The assertion is dropped after the specified timeout. Timeout value is not used by the Caeffinate CLI when cmd is passed. Note: this timeout is passed to the Caffeinate CLI command, it is not enforced by python
-            wait: Waits for the process with the specified pid to exit. Once the the process exits, the assertion is also released. This option is ignored by the Caeffinate CLI when cmd is passed.
+            timeout: Specifies the timeout value in seconds for which this assertion has to be valid. The assertion is dropped after the specified timeout. Timeout value is not used by the Caffeinate CLI when cmd is passed. Note: this timeout is passed to the Caffeinate CLI command, it is not enforced by python
+            wait: Waits for the process with the specified pid to exit. Once the the process exits, the assertion is also released. This option is ignored by the Caffeinate CLI when cmd is passed.
             This option conflicts with cmd.
             signal: The signal used to kill the child process (if cmd likely the process Caffeinate execs into). If 0, do not kill it
             block: If True: Block until cmd has finished executing before returning from __enter__
         """
-        if not _CAFFEINATE_ENABLED:
+        if not self.SUPPORTED:
             raise NotImplementedError(f"This class is only available on macOS via: {CAFFEINATE}")
         if (
             isinstance(timeout, float)
@@ -129,7 +126,7 @@ class Caffeinate:
             pid = getpid()
             with self._instances_lock:
                 if self._finalizing:
-                    raise PythonFinalizationError("No more new Caeffinate subprocesses are allowed")
+                    raise PythonFinalizationError("No more new Caffeinate subprocesses are allowed")
                 self._data = self._Data(pid, Popen(self._cmd))  # pylint: disable=consider-using-with
                 self._instances.add(self)
             self._log.debug("Created Popen(%s), pid=%s", self._cmd, self._data.proc.pid)
@@ -158,7 +155,7 @@ class Caffeinate:
         self._stop(signal)
 
     @classmethod
-    def decorate(
+    def decorate[**P, R](
         cls, cmd: list[Path | str | None] | None = None, **init_kwargs: object
     ) -> Callable[[Callable[P, R]], Callable[P, R]]:
         """A decorator to wrap a function with a Caffeinate instance
@@ -250,5 +247,5 @@ class Caffeinate:
 
 
 assert 0 not in Signals, "0 not expected in signal.Signals as it's a nop"
-if _CAFFEINATE_ENABLED:
+if Caffeinate.SUPPORTED:
     atexit.register(Caffeinate._atexit)  # pylint: disable=protected-access

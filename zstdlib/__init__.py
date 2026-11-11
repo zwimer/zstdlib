@@ -1,6 +1,7 @@
-__version__ = "0.10.4"
+__version__ = "0.10.5"
 
 from .exc_capture import ExcCapture, ExcDelay
+from .hybridmethod import hybridmethod
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
 from .singleton import Singleton
@@ -18,6 +19,7 @@ __all__ = (
     "Singleton",
     "auto",
     "frozen",
+    "hybridmethod",
     "io",
     "lazy",
     "log",
