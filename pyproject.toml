@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,10 +7,9 @@ name = "zstdlib"
 classifiers = [
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.14",
-	"Development Status :: 5 - Production/Stable",
-	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 ]
-license = {text = "GPLv3"}
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 description = "A set of useful python utilities"
 urls = {Homepage = "https://github.com/zwimer/zstdlib"}
 requires-python = ">= 3.14"
@@ -25,7 +24,6 @@ content-type = "text/markdown"
 
 [tool.setuptools]
 include-package-data = true
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 namespaces = false
