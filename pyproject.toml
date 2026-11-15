@@ -15,6 +15,7 @@ urls = {Homepage = "https://github.com/zwimer/zstdlib"}
 requires-python = ">= 3.14"
 dynamic = ["version"]
 dependencies = [
+	"fasteners",
 	"osascript2"  # For macOS
 ]
 
@@ -48,6 +49,9 @@ disable = [
 	"invalid-name"
 ]
 
+[tool.mypy]
+strict = true
+
 [tool.black]
 line-length = 110
 target-version = ["py314"]
@@ -61,6 +65,7 @@ ignore=[
 	"E731",
 	"I001",
 	"PLR0913", "PLR2004",
+	"PYI025",
 	"S101", "S603",
 	"TID252",
 ]
