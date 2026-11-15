@@ -1,13 +1,12 @@
-from io import BufferedIOBase, TextIOBase, RawIOBase, IOBase
+from io import BufferedIOBase, TextIOBase, RawIOBase
+from typing import Self, Any, IO, overload
 from weakref import WeakKeyDictionary
-from typing import Self, Any, cast
 from threading import RLock
-from itertools import chain
 
 __all__ = ("BinaryIO", "TextIO", "io")
 
 
-class ProtectedFile:
+class ProtectedFile[T: (str, bytes)]:
     """A wrapper around an IO object that prevents access to certain attributes
     If absolutely necessary, users can access the raw object directly via .raw
     """
@@ -15,12 +14,12 @@ class ProtectedFile:
     PROTECTED_PREFIXES = ("read", "seek", "getbuffer", "getvalue", "detach")
     __slots__ = ("raw",)
 
-    def __init__(self, raw: IOBase) -> None:
+    def __init__(self, raw: IO[T]) -> None:
         """Create a ProtectedFile
         Args:
             raw: The raw IO object to wrap, users can access it directly if they must
         """
-        self.raw: IOBase = raw
+        self.raw: IO[T] = raw
 
     def __getattr__(self, item: str) -> Any:
         """Prevent access to certain attributes"""
@@ -39,17 +38,17 @@ class _IOWrapperBase[T: (str, bytes)]:
     """
 
     __slots__ = ("_buffer", "_eof", "f", "lock")
-    _instances: WeakKeyDictionary[IOBase, Self] = WeakKeyDictionary()  # noqa: RUF012
+    _instances: WeakKeyDictionary[IO[T], Self] = WeakKeyDictionary()  # noqa: RUF012
     _wr_lock: RLock = RLock()
 
-    def __new__(cls, f: IOBase) -> Self:
+    def __new__(cls, f: IO[T]) -> Self:
         """Create a new instance of cls for raw, or return an existing instance if one exists"""
         with cls._wr_lock:
             if (ret := cls._instances.get(f, None)) is None:
                 cls._instances[f] = (ret := super().__new__(cls))
         return ret
 
-    def __init__(self, f: IOBase, *, binary: bool) -> None:
+    def __init__(self, f: IO[T], *, binary: bool) -> None:
         """Initialize the IO object with a raw IO object
         Note: This class takes ownership of the input object, do not use it elsewhere
 
@@ -58,7 +57,7 @@ class _IOWrapperBase[T: (str, bytes)]:
             binary: If True, the IO object will read/write bytes, otherwise it will read/write strings
         """
         self._buffer: T = (bytes if binary else str)()  # type: ignore[assignment]
-        self.f = ProtectedFile(f)
+        self.f: ProtectedFile[T] = ProtectedFile(f)
         self.lock = RLock()
 
     def read(self, size: int = -1) -> T:
@@ -80,10 +79,10 @@ class _IOWrapperBase[T: (str, bytes)]:
         """
         with self.lock:
             nl: T = "\n" if isinstance(self._buffer, str) else b"\n"
-            ret = self._read_buffer(self._buffer.find(nl)) + self._read_buffer(1)
+            ret: T = self._read_buffer(self._buffer.find(nl)) + self._read_buffer(1)
             if ret.endswith(nl):
                 return ret
-            return ret + cast(T, self.f.raw.readline())  # cast b/c IOBase's readline() -> bytes
+            return ret + self.f.raw.readline()
 
     def readlines(self) -> list[T]:
         """Read all lines from self.f.raw until EOF"""
@@ -137,8 +136,7 @@ class _IOWrapperBase[T: (str, bytes)]:
     #
 
     def _read(self, size: int) -> T:
-        ret: T = cast(T, self.f.raw.read(size))  # cast b/c IOBase's read() -> bytes
-        return ret if ret else self._buffer[:0]  # Some .read's can return None
+        return ret if (ret := self.f.raw.read(size)) else self._buffer[:0]  # .read can return None
 
     def _read_buffer(self, size: int = -1) -> T:
         if size == -1:
@@ -150,7 +148,7 @@ class _IOWrapperBase[T: (str, bytes)]:
     @staticmethod
     def _remainder(data: list[T], suffix: T) -> int:
         assert suffix, "suffix: expected non-empty str or bytes"
-        rev = chain.from_iterable(reversed(i) for i in reversed(data))
+        rev = (j for it in map(reversed, reversed(data)) for j in it)
         for index, (i, k) in enumerate(zip(rev, reversed(suffix))):
             if i != k:
                 return len(suffix) - index
@@ -167,7 +165,7 @@ class _IOWrapperBase[T: (str, bytes)]:
     __copy__ = None
 
 
-def _mode(f: IOBase, binary: bool | None) -> bool:
+def _mode[T: (str, bytes)](f: IO[T], binary: bool | None) -> bool:
     """Attempt to determine if f is binary or not, if known what it should be, error if different"""
     mode = getattr(f, "mode", "")
     binary = binary or "b" in mode or isinstance(f, (RawIOBase, BufferedIOBase))
@@ -182,28 +180,36 @@ def _mode(f: IOBase, binary: bool | None) -> bool:
 class TextIO(_IOWrapperBase[str]):
     """A wrapper around TextIO objects that add additional functionality such as readuntil, unread, and peek"""
 
-    def __new__(cls, f: IOBase) -> Self:
+    def __new__(cls, f: IO[str]) -> Self:
         if not _mode(f, False):
             raise TypeError("raw should be a non-binary IO object")
         return super().__new__(cls, f)
 
-    def __init__(self, f: IOBase) -> None:
+    def __init__(self, f: IO[str]) -> None:
         super().__init__(f, binary=False)
 
 
 class BinaryIO(_IOWrapperBase[bytes]):
     """A wrapper around BinaryIO objects that add additional functionality such as readuntil, unread, and peek"""
 
-    def __new__(cls, f: IOBase) -> Self:
+    def __new__(cls, f: IO[bytes]) -> Self:
         if _mode(f, True):
             raise TypeError("raw should be a binary IO object")
         return super().__new__(cls, f)
 
-    def __init__(self, f: IOBase) -> None:
+    def __init__(self, f: IO[bytes]) -> None:
         super().__init__(f, binary=False)
 
 
-def io(raw: IOBase, binary: bool | None = None) -> TextIO | BinaryIO:
+@overload
+def io(raw: IO[str], binary: bool | None = None) -> TextIO: ...
+
+
+@overload
+def io(raw: IO[bytes], binary: bool | None = None) -> BinaryIO: ...
+
+
+def io[T: (str, bytes)](raw: IO[T], binary: bool | None = None) -> TextIO | BinaryIO:
     """Convert an IO object to a TextIO or BinaryIO object
         For raw to be valid, one of the three must be true:
         1. raw is an io.TextIOBase, io.RawIOBase, or io.BufferedIOBase object
@@ -211,4 +217,4 @@ def io(raw: IOBase, binary: bool | None = None) -> TextIO | BinaryIO:
         3. binary must be set
     If the three detection methods disagree on if raw is binary, a TypeError is raised
     """
-    return TextIO(raw) if _mode(raw, binary) else BinaryIO(raw)
+    return TextIO(raw) if _mode(raw, binary) else BinaryIO(raw)  # type: ignore[arg-type]

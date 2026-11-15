@@ -1,13 +1,14 @@
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from logging import getLogger
+from types import FrameType
 import signal
 
 
 @contextmanager
 def signal_cm(
     signalnum: signal.Signals | int,
-    handler: signal.Handlers | Callable,
+    handler: signal.Handlers | Callable[[int, FrameType | None], None],
     *,
     disable_logging: bool = False,
 ) -> Iterator[None]:

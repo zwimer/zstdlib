@@ -1,9 +1,7 @@
-from typing import ClassVar, TypeVar, Never, Self, Any
+from typing import ClassVar, Never, Any
 from collections import defaultdict
 from threading import RLock
 from functools import cache
-
-T = TypeVar("T")
 
 
 class NoInstanceError(TypeError):
@@ -50,7 +48,7 @@ class _SingletonType(type):
 
     @classmethod
     @cache
-    def instance(mcs, t: type[T]) -> T:
+    def instance(mcs, t: type[Singleton]) -> Singleton:
         """Get the instance of cls"""
         if not isinstance(t, mcs):
             raise TypeError(f"{t} is not a Singleton type")
@@ -66,7 +64,7 @@ class Singleton(metaclass=_SingletonType):
     """A thread-safe singleton base class"""
 
     @classmethod
-    def instance(cls) -> Self:
+    def instance(cls) -> Singleton:
         """Blocking get the instance of cls; raise if not constructed"""
         assert isinstance(cls, _SingletonType), "Metaclass should be _SingletonType"
         tc: type[_SingletonType] = type(cls)

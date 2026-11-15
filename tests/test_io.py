@@ -5,7 +5,7 @@ import unittest
 from zstdlib.io import ProtectedFile, BinaryIO, TextIO, io
 
 
-class RamFile(tempfile.SpooledTemporaryFile):
+class RamFile(tempfile.SpooledTemporaryFile[Any]):
     """A file-like object that stores its contents in memory."""
 
     rollover = NotImplemented  # Disallow rollover
@@ -22,7 +22,7 @@ class RamFile(tempfile.SpooledTemporaryFile):
 class TestIO(unittest.TestCase):
 
     def test_init(self) -> None:
-        with RamFile(mode="wb+") as fb, RamFile() as fs:
+        with RamFile(mode="w+b") as fb, RamFile() as fs:
             ts = TextIO(fs)
             tb = BinaryIO(fb)
             with self.assertRaises(TypeError):
@@ -44,7 +44,7 @@ class TestIO(unittest.TestCase):
     def test_unread(self) -> None:
         with RamFile() as raw:
             f = io(raw)
-            f.unread("hello")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("hello")
             self.assertEqual("hello", f._buffer)
 
     def test_read(self) -> None:
@@ -55,18 +55,18 @@ class TestIO(unittest.TestCase):
             self.assertEqual("fo", f.read(2))
             self.assertEqual("o", f.read(1))
             # Test read of buffer
-            f.unread("bar")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("bar")
             self.assertEqual("b", f.read(1))
             # Test read of file + buffer
-            f.unread("foob")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("foob")
             self.assertEqual("foobar", f.read(6))
-            f.unread("foobar")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("foobar")
             self.assertEqual("foobarbaz", f.read())
 
     def test_peek(self) -> None:
         with RamFile() as raw:
             f = io(raw)
-            f.unread("foo")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("foo")
             # Test peek of buffer
             for i in range(3):
                 self.assertEqual("fo", f.peek(2))
@@ -77,7 +77,7 @@ class TestIO(unittest.TestCase):
                 self.assertEqual("ba", f.peek(2))
             self.assertEqual("bar", f.read())
             # Test peek of both
-            f.unread("baz")  # type: ignore[arg-type]  # STF types as bytes regardless of mode :/
+            f.unread("baz")
             raw.load("qux")
             for i in range(3):
                 for k in range(5):

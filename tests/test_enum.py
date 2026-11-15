@@ -1,5 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,unused-variable
-from typing import Self
+from typing import Self, Any
 import unittest
 
 from zstdlib.enum import EnumType, Enum, entries, values, auto
@@ -25,7 +25,7 @@ class TestEnumType(unittest.TestCase):
         class ET1(metaclass=EnumType, dupes_ok=True):
             a: int = 5
             b: int = 5
-            c: dict = {}  # noqa: RUF012
+            c: dict[Any, Any] = {}  # noqa: RUF012
 
         with self.assertRaises(ValueError):
 
@@ -36,7 +36,7 @@ class TestEnumType(unittest.TestCase):
         with self.assertRaises(TypeError):
 
             class ET3(metaclass=EnumType):
-                a: dict = {}  # noqa: RUF012
+                a: dict[Any, Any] = {}  # noqa: RUF012
 
     def test_type_check(self) -> None:
         class ET1(metaclass=EnumType, type_check=set()):

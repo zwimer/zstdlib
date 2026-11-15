@@ -1,6 +1,6 @@
 from enum import Enum, unique, auto
+from typing import Self, cast
 from functools import cache
-from typing import Self
 import re
 
 MODIFIERS = ("bold", "dim", "italic", "underline", "blinking", "inverse", "hidden", "strikethrough")
@@ -68,9 +68,9 @@ class RawColor:
 class _ColorMeta(type):
     """A metaclass that implements __getattr__ at the class level for Color"""
 
-    def __getattr__(cls, item: str) -> Color:
+    def __getattr__(cls: _ColorMeta, item: str) -> Color:
         try:
-            return cls(code=RawColor._parse_color(item))
+            return cast(type[Color], cls)(code=RawColor._parse_color(item))
         except ValueError as e:
             raise AttributeError(str(e)) from e
 

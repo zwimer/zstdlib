@@ -42,15 +42,15 @@ class TestTrace(LeftBase, unittest.TestCase):
         self.assertTrue(hasattr(logging, "trace"))
         self.assertTrue(hasattr(logging.getLogger(), "trace"))
         self.assertEqual(logging.TRACE, 5)
-        self.assertEqual(logging.getLevelName(logging.TRACE), "TRACE")  # type: ignore[call-overload]
+        self.assertEqual(logging.getLevelName(logging.TRACE), "TRACE")
         # Root check
         with self.hijack("") as log:
             old = log.getEffectiveLevel()
             # pylint: disable-next=not-callable
-            logging.trace("test1")  # type: ignore[misc]
+            logging.trace("test1")
             log.setLevel(logging.DEBUG)
             # pylint: disable-next=not-callable
-            logging.trace("test2")  # type: ignore[misc]
+            logging.trace("test2")
             log.setLevel(old)
         self.assertEqual(self.messages[log], ["test1"])
         # Logger check

@@ -42,7 +42,10 @@ def prompt_until(
     If eof EOFError is caught, return None
     Return the case-adjusted string the user entered
     """
-    cased = lambda x: (x.casefold() if ignore_case else x)
+
+    def cased(x: str) -> str:
+        return x.casefold() if ignore_case else x
+
     until = frozenset(map(cased, (until,) if isinstance(until, str) else until))
     try:
         while (ret := cased(input(msg).strip())) not in until:

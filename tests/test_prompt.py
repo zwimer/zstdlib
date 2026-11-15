@@ -1,11 +1,17 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,unused-variable
 from unittest.mock import MagicMock, patch
+from typing import Any
 import unittest
 
 from zstdlib.prompt import prompt_until, prompt_for, yn_prompt
 
-mock_input = lambda *x: patch("builtins.input", side_effect=x)
-mock_print = lambda: patch("builtins.print")
+
+def mock_input(*x: str | type[BaseException]) -> Any:
+    return patch("builtins.input", side_effect=x)
+
+
+def mock_print() -> Any:
+    return patch("builtins.print")
 
 
 def want_have(mock_p: MagicMock, msg: str, n: int) -> tuple[list[str], list[str]]:

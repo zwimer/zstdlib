@@ -1,5 +1,5 @@
+from collections.abc import Iterator, Set
 from typing import ClassVar, Never, Any
-from collections.abc import Iterator
 import annotationlib
 
 
@@ -22,7 +22,9 @@ class EnumType(type):
 
     _AUTO_PREFIX = "Enum_Auto_"
     __entries__: dict[str, tuple[type | None, Any]]  # Set by __new__ in attrs
-    _TC_DEFAULT: ClassVar[set[type | None]] = {int, str, float, bool, complex, bytes, None, type(None)}
+    _TC_DEFAULT: ClassVar[frozenset[type | None]] = frozenset(
+        (int, str, float, bool, complex, bytes, None, type(None))
+    )
 
     class _AutoValue:
         """A class representing an automatically assigned enum value"""
@@ -39,7 +41,7 @@ class EnumType(type):
     @classmethod
     def _gen_entries_and_annotations(
         mcs: type[EnumType],
-        attrs: dict,
+        attrs: dict[str, Any],
         dupes_ok: bool,
         ans: dict[str, type | None],
     ) -> dict[str, tuple[type | None, Any]]:
@@ -85,7 +87,7 @@ class EnumType(type):
         *,
         empty_ok: bool = False,
         dupes_ok: bool = False,
-        type_check: set[type | None] = _TC_DEFAULT,
+        type_check: Set[type | None] = _TC_DEFAULT,
         **kwargs: Any,
     ) -> EnumType:
         # Disallow undesired instance methods

@@ -63,15 +63,18 @@ class TestSingleton(unittest.TestCase):
         results = []
 
         # Helper functions that can help define thread tests
-        timestamp = lambda: (datetime.now() - start[0]).total_seconds()
+        def timestamp() -> float:
+            return (datetime.now() - start[0]).total_seconds()
 
         def mk_cls(cls: type, name: str) -> None:
-            fmt = lambda x: f"{timestamp():.1f}: {name} {x} {cls.__name__}()"
+            def fmt(x: str) -> str:
+                return f"{timestamp():.1f}: {name} {x} {cls.__name__}()"
+
             events.append(fmt("->"))
             results.append(cls())
             events.append(fmt("<-"))
 
-        def simple(name: str, cls: type, delay: float) -> Callable:
+        def simple(name: str, cls: type, delay: float) -> Callable[[], None]:
             def _t() -> None:
                 with lock:  # Ensure all threads can start simultaneously
                     pass
@@ -81,7 +84,7 @@ class TestSingleton(unittest.TestCase):
             return _t
 
         # Run all functions
-        def run_all(*funcs: Callable) -> None:
+        def run_all(*funcs: Callable[[], None]) -> None:
             ts = [Thread(target=i) for i in funcs]
             events.clear()
             results.clear()

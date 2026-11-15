@@ -1,4 +1,4 @@
-from typing import NamedTuple, Final, ClassVar, Self
+from typing import NamedTuple, Final, ClassVar, Self, Any
 from collections.abc import Callable, Iterable
 from subprocess import TimeoutExpired, Popen
 from multiprocessing import Process
@@ -32,7 +32,7 @@ class Caffeinate:
 
     class _Data(NamedTuple):
         owner: int
-        proc: Popen
+        proc: Popen[Any]
 
     class SignalZeroError(ValueError):
         """Raised when calling __enter__ or __exit__ on a Caffeinate instance with .signal == 0"""
@@ -53,7 +53,7 @@ class Caffeinate:
         system: bool = False,
         user: bool = False,
         timeout: int | None = None,
-        wait: int | Popen | Process | None = None,
+        wait: int | Popen[Any] | Process | None = None,
         # For Caffeinate class itself
         signal: Signals | int = Signals.SIGTERM,
         block: bool = False,

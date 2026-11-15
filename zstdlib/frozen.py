@@ -1,4 +1,4 @@
-from typing import Any, overload
+from typing import Protocol, Any, overload
 from collections.abc import Callable
 
 _FN_ATTRS = (
@@ -62,18 +62,26 @@ class Freezable:
         super().__delattr__(item)
 
 
-@overload
-def frozen[T](arg: str) -> Callable[[type[T]], type[T]]: ...
-@overload
-def frozen[T](arg: type[T]) -> type[T]: ...
+class _ClassDecorator(Protocol):
+    def __call__[T](self, cls: type[T], /) -> type[T]: ...
 
 
-def frozen[T](arg: str | type[T]) -> Callable[[type[T]], type[T]] | type[T]:
-    """A class decorator to permanently freeze a class after some method, __init__ by default
-    If passed a string, will freeze after the method with that name
+@overload
+def frozen(arg: str, /) -> _ClassDecorator: ...
+
+
+@overload
+def frozen[T](arg: type[T], /) -> type[T]: ...
+
+
+def frozen(arg: str | type[Any], /) -> _ClassDecorator | type[Any]:
     """
+    A class decorator to permanently freeze a class after some method, __init__ by default
+    If passed a string, return a decorator that will freeze after the method with that name
+    """
+    ff_key: str = "_freezable_frozen_"
 
-    def shim_method(cls: type, name: str, new: Callable) -> None:
+    def shim_method[T](cls: type[T], name: str, new: Callable[..., Any]) -> None:
         """Install shims for _FN_ATTRS; modifies new"""
         original = getattr(cls, name)
         for i in _FN_ATTRS:  # Copy attributes of old fn onto new fn
@@ -81,24 +89,23 @@ def frozen[T](arg: str | type[T]) -> Callable[[type[T]], type[T]] | type[T]:
                 setattr(new, i, getattr(original, i))
         setattr(cls, name, new)  # Install
 
-    def mk_frozen(cls: type, method: str) -> type:
-        original_method: Callable = getattr(cls, method)
-        original_setattr: Callable = cls.__setattr__
-        original_delattr: Callable = cls.__delattr__
+    def mk_frozen[T](cls: type[T], method: str) -> type[T]:
+        original_method: Callable[..., Any] = getattr(cls, method)
+        original_setattr: Callable[[T, str, Any], None] = cls.__setattr__
+        original_delattr: Callable[[T, str], None] = cls.__delattr__
 
-        def new_method(self: Any, *args: Any, **kwargs: Any) -> Any:
+        def new_method(self: T, *args: Any, **kwargs: Any) -> Any:
             ret = original_method(self, *args, **kwargs)
-            # pylint: disable-next=protected-access
-            self._freezable_frozen_ = True  # type: ignore[attr-defined]
+            setattr(self, ff_key, True)
             return ret
 
-        def __setattr__(self: Any, key: str, value: Any) -> Any:
-            if getattr(self, "_freezable_frozen_", False):
+        def __setattr__(self: T, key: str, value: Any) -> None:
+            if getattr(self, ff_key, False):
                 raise AttributeError("Cannot modify frozen object")
             return original_setattr(self, key, value)
 
-        def __delattr__(self: Any, item: str) -> Any:
-            if getattr(self, "_freezable_frozen_", False):
+        def __delattr__(self: T, item: str) -> None:
+            if getattr(self, ff_key, False):
                 raise AttributeError("Cannot modify frozen object")
             return original_delattr(self, item)
 
@@ -109,5 +116,9 @@ def frozen[T](arg: str | type[T]) -> Callable[[type[T]], type[T]] | type[T]:
         return cls
 
     if isinstance(arg, str):
-        return lambda cls: mk_frozen(cls, arg)
+
+        def decorator[T](cls: type[T]) -> type[T]:
+            return mk_frozen(cls, arg)
+
+        return decorator
     return mk_frozen(arg, "__init__")

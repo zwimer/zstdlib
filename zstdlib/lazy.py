@@ -1,13 +1,10 @@
 from collections.abc import Callable
-from typing import ParamSpec
 from threading import Lock
-
-P = ParamSpec("P")
 
 __all__ = ("Func", "Str")
 
 
-class Func:
+class Func[**P]:
     """A lazily evaluated function"""
 
     __slots__ = ("_args", "_fn", "_kwargs", "_lock", "_result")
@@ -31,7 +28,7 @@ class Func:
         return self._result
 
 
-class Str(Func):
+class Str[**P](Func[P]):
     """A lazily evaluated string"""
 
     def __str__(self) -> str:

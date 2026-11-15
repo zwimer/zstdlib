@@ -69,7 +69,10 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
             for i in levels:
                 log.log(i, msg)
         self.assertEqual(len(levels), len(self.messages[log]))
-        l_name = lambda idx: self.messages[log][idx].split("|")[0].strip()
+
+        def l_name(idx: int) -> str:
+            return self.messages[log][idx].split("|")[0].strip()
+
         self.assertEqual(Color.dim("Level 5".ljust(8)), l_name(0))
         self.assertEqual("DEBUG", l_name(1))
         self.assertEqual(Color.blue("INFO".ljust(8)), l_name(2))
@@ -85,7 +88,10 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
             log.log(4, msg)
             log.log(5, msg)
         self.assertEqual(2, len(self.messages[log]))
-        l_name = lambda idx: self.messages[log][idx].split("|")[0].strip()
+
+        def l_name(idx: int) -> str:
+            return self.messages[log][idx].split("|")[0].strip()
+
         self.assertEqual(Color.dim("Level 4".ljust(8)), l_name(0))
         self.assertEqual("Level 5", l_name(1))
 
@@ -96,7 +102,10 @@ class TestCuteFormatter(LeftBase, unittest.TestCase):
             log.log(14, msg)
             log.log(15, msg)
         self.assertEqual(2, len(self.messages[log]))
-        l_name = lambda idx: self.messages[log][idx].split("|")[0].strip()
+
+        def l_name(idx: int) -> str:
+            return self.messages[log][idx].split("|")[0].strip()
+
         self.assertEqual("Level 14".ljust(8), l_name(0))
         self.assertEqual(Color.bright_red_bg_yellow("Level 15".ljust(8)), l_name(1))
 
