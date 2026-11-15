@@ -2,13 +2,7 @@ from collections.abc import Iterator, Set
 from typing import ClassVar, Never, Any
 import annotationlib
 
-
-class _Auto:
-    """A sentinel value for automatic enum values"""
-
-
-# Pass this as a value to have it automatically assigned
-auto = _Auto()
+auto = object()  # Use sentinel in python3.15
 
 
 class EnumType(type):

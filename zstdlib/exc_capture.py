@@ -11,6 +11,7 @@ type EXC_T = type[BaseException] | tuple[type[BaseException]]
 class ExcCapture:
     """A class that exposes a context manager which captures and suppresses any raised exception of a given type / tuple of types"""
 
+    # In python3.15 use sentinel
     class _NoResult:
         """A sentinel for no result"""
 
