@@ -9,16 +9,8 @@ import unittest
 import time
 import os
 
-from zstdlib import (
-    GlobalIPLock as GIPL,
-    AbstractIPLock,
-    IPLock,
-    RIPLock,
-    LockHung,
-    LockPathInUse,
-    NotAcquired,
-    normpath,
-)
+from zstdlib.ip_lock import LockPathInUseError, NotAcquiredError, AbstractIPLock, LockHungError
+from zstdlib import GlobalIPLock as GIPL, RIPLock, IPLock, normpath
 
 DELAY = 0.25  # Lower is faster but less accurate
 
@@ -206,7 +198,7 @@ class TestGlobalProcessLock(unittest.TestCase):
             lock.release()
             self.assertFalse(lock.acquired)
             # Release 3/2
-            with self.assertRaises(NotAcquired):
+            with self.assertRaises(NotAcquiredError):
                 lock.release()
             self.assertFalse(lock.acquired)
             # CM exit, lock file removed by NTF
@@ -285,7 +277,7 @@ class TestIPLocks(unittest.TestCase):
             # pylint: enable=protected-access
         # Test releasing when we don't have
         self.assertFalse(lock.acquired)
-        with self.assertRaises(NotAcquired):
+        with self.assertRaises(NotAcquiredError):
             lock.release()
         # pylint: disable=protected-access
         lock._rc += 1
@@ -334,15 +326,15 @@ class TestIPLocks(unittest.TestCase):
         self.assertFalse(rlock.acquired)
         del rlock
 
-        with mk_lock(IPLock) as lock, self.assertRaises(LockPathInUse):
+        with mk_lock(IPLock) as lock, self.assertRaises(LockPathInUseError):
             _ = RIPLock(lock.path)
         del lock
-        with mk_lock(RIPLock) as rlock, self.assertRaises(LockPathInUse):
+        with mk_lock(RIPLock) as rlock, self.assertRaises(LockPathInUseError):
             _ = IPLock(rlock.path)
         del rlock
 
     def test_lock_hung(self) -> None:
-        with mk_lock(IPLock) as lock, enter(lock), self.assertRaises(LockHung):
+        with mk_lock(IPLock) as lock, enter(lock), self.assertRaises(LockHungError):
             _ = lock.acquire()
 
 

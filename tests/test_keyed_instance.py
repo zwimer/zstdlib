@@ -12,8 +12,8 @@ import time
 import sys
 import os
 
-from zstdlib.keyed_instance import KeyedInstanceProcessError
-from zstdlib import CircularConstruction, KeyedInstance
+from zstdlib.keyed_instance import CircularConstructionError, KeyedInstanceProcessError
+from zstdlib import KeyedInstance
 
 
 class Nop:
@@ -129,14 +129,14 @@ class TestKeyedInstance(unittest.TestCase):
             def __init__(self, b: bool) -> None:
                 self.same = type(self)(b)  # Father is self, circle
 
-        with self.assertRaises(CircularConstruction):
+        with self.assertRaises(CircularConstructionError):
             _ = Crazy(True)
 
         class Crazy2(KeyedInstance):
             def __init__(self, b: bool) -> None:
                 self.inverse = type(self)(not b)  # Grandfather is self
 
-        with self.assertRaises(CircularConstruction):
+        with self.assertRaises(CircularConstructionError):
             _ = Crazy2(True)
 
     def test_multiproc(self) -> None:
@@ -249,8 +249,8 @@ class TestKeyedInstance(unittest.TestCase):
             "5 | Thread-1 | C1(0), next=[0, 0] - err: C2(0)",  # release C2(0)
         ]
         self.assertEqual(Action.strs(actions), expected)
-        self.assertIsInstance(fail1, CircularConstruction)
-        self.assertIsInstance(fail2, CircularConstruction)
+        self.assertIsInstance(fail1, CircularConstructionError)
+        self.assertIsInstance(fail2, CircularConstructionError)
         self.assertIsNot(fail1, fail2)
 
         # Test simultaneous construction

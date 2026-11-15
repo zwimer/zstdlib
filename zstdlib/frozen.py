@@ -1,6 +1,8 @@
 from typing import Protocol, Any, overload
 from collections.abc import Callable
 
+__all__ = ("Freezable", "frozen")
+
 _FN_ATTRS = (
     "__annotations__",
     "__type_params__",

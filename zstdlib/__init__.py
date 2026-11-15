@@ -1,9 +1,9 @@
-__version__ = "0.10.10"
+__version__ = "0.10.11"
 
-from .ip_lock import AbstractIPLock, GlobalIPLock, IPLock, LockHung, LockPathInUse, NotAcquired, RIPLock
-from .keyed_instance import CircularConstruction, KeyedInstance
 from .prompt import prompt_until, prompt_for, yn_prompt
+from .ip_lock import GlobalIPLock, IPLock, RIPLock
 from .exc_capture import ExcCapture, ExcDelay
+from .keyed_instance import KeyedInstance
 from .hybridmethod import hybridmethod
 from .not_set import NotSetType, NotSet
 from .frozen import Freezable, frozen
@@ -14,8 +14,6 @@ from .util import normpath
 from . import macos, lazy, log, io
 
 __all__ = (
-    "AbstractIPLock",
-    "CircularConstruction",
     "Enum",
     "ExcCapture",
     "ExcDelay",
@@ -23,9 +21,6 @@ __all__ = (
     "GlobalIPLock",
     "IPLock",
     "KeyedInstance",
-    "LockHung",
-    "LockPathInUse",
-    "NotAcquired",
     "NotSet",
     "NotSetType",
     "RIPLock",

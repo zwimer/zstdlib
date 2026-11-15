@@ -3,6 +3,8 @@ from collections import defaultdict
 from threading import RLock
 from functools import cache
 
+__all__ = ("NoInstanceError", "Singleton")
+
 
 class NoInstanceError(TypeError):
     """A TypeError raised when trying to get a Singleton instance before constructing it"""

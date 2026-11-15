@@ -1,5 +1,7 @@
 from .singleton import Singleton
 
+__all__ = ("NotSet", "NotSetType")
+
 
 # Remove in python3.15
 class NotSetType(Singleton):

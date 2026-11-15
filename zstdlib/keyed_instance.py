@@ -4,10 +4,10 @@ from collections.abc import Hashable
 from abc import ABCMeta
 import sys
 
-__all__ = ("CircularConstruction", "KeyedInstance", "KeyedInstanceProcessError")
+__all__ = ("CircularConstructionError", "KeyedInstance", "KeyedInstanceProcessError")
 
 
-class CircularConstruction(RuntimeError):
+class CircularConstructionError(RuntimeError):
     """Raised when keyed constructors form a circular dependency."""
 
     def __init__(self, type_: type) -> None:
@@ -101,7 +101,7 @@ class _KeyedInstanceMeta(ABCMeta):
                                 break
                             blocking = dependency.tid
                         else:
-                            raise CircularConstruction(cls)
+                            raise CircularConstructionError(cls)
 
                         # Wait for a thread to finish construction then recheck if we can start
                         condition.wait()
@@ -139,7 +139,7 @@ class KeyedInstance(metaclass=_KeyedInstanceMeta):
     The first thread to claim a cache key performs construction. If
     construction fails, another waiting thread can attempt construction.
 
-    If items being constructed require constructing each other, a CircularConstruction is raised
+    If items being constructed require constructing each other, a CircularConstructionError is raised
 
     Do not mix this with fork (uses thread ids internally); multiprocessing spawn is ok
     """

@@ -10,14 +10,22 @@ from fasteners import InterProcessLock
 from .keyed_instance import KeyedInstance
 from .util import normpath
 
-__all__ = ("AbstractIPLock", "GlobalIPLock", "IPLock", "LockHung", "LockPathInUse", "NotAcquired", "RIPLock")
+__all__ = (
+    "AbstractIPLock",
+    "GlobalIPLock",
+    "IPLock",
+    "LockHungError",
+    "LockPathInUseError",
+    "NotAcquiredError",
+    "RIPLock",
+)
 
 
-class NotAcquired(RuntimeError):
+class NotAcquiredError(RuntimeError):
     """Raised by AbstractIPLock.release if a lock is not acquired"""
 
 
-class LockHung(RuntimeError):
+class LockHungError(RuntimeError):
     """Raised when a non-reentrant lock attempts to reenter with blocking=True and no timeout"""
 
 
@@ -42,7 +50,7 @@ class AbstractIPLock(ABC):
 
     @abstractmethod
     def release(self) -> None:
-        """Release the lock, raises NotAcquired if not self.acquired"""
+        """Release the lock, raises NotAcquiredError if not self.acquired"""
 
     # Concrete methods
 
@@ -160,7 +168,7 @@ class GlobalIPLock(KeyedInstance, AbstractIPLock):
     def release(self) -> None:
         """Release the lock"""
         if not self.acquired:
-            raise NotAcquired(f"{self.__class__.__name__}: {self.path}")
+            raise NotAcquiredError(f"{self.__class__.__name__}: {self.path}")
         with self._t_lock:
             assert bool(self._rc) == self._ip_lock.acquired
             if self._rc <= 1:
@@ -169,7 +177,7 @@ class GlobalIPLock(KeyedInstance, AbstractIPLock):
             assert bool(self._rc) == self._ip_lock.acquired
 
 
-class LockPathInUse(LookupError):
+class LockPathInUseError(LookupError):
     """
     Raised when a user attempts to create an IPLock lock for a given
     GlobalIPLock that already exists with a different reentrancy setting
@@ -195,7 +203,7 @@ class _IPLock(AbstractIPLock):
     def __init__(self, gipl: GlobalIPLock | Path | str, *args: Any, **kwargs: Any) -> None:
         """
         Construct an inter process lock syncronized by gipl (or GlobalIPLock.new(gipl) if str | Path)
-        If a lock of a different reentrancy setting already exists for this gipl, raise LockPathInUse
+        If a lock of a different reentrancy setting already exists for this gipl, raise LockPathInUseError
         """
         super().__init__(*args, **kwargs)  # For MRO superclasses
         if isinstance(gipl, Path | str):
@@ -209,7 +217,7 @@ class _IPLock(AbstractIPLock):
                 got = (self._cls_reentrant, Lock())
                 self._data[gipl.path] = got
         if got[0] != self._cls_reentrant:
-            raise LockPathInUse(f"Want reentrant={self._cls_reentrant} but existing lock is the opposite")
+            raise LockPathInUseError(f"reentrant={self._cls_reentrant} but existing lock is the opposite")
         self._instance_reentrant: Final[bool] = got[0]
         self._sync_lock: Final[Lock] = got[1]
         self._instance_lock: Final[Lock] = Lock()  # Allow multiple threads to use this instance at once
@@ -237,7 +245,7 @@ class _IPLock(AbstractIPLock):
                 acquired = self.acquired
                 if acquired and not self._instance_reentrant:
                     if timeout_per is None:
-                        raise LockHung(f"{self.__class__.__name__}: {self.path}")
+                        raise LockHungError(f"{self.__class__.__name__}: {self.path}")
                     return ret
                 timeout = -1 if timeout_per is None else timeout_per
                 if acquired or self._sync_lock.acquire(blocking, timeout=timeout):
@@ -253,7 +261,7 @@ class _IPLock(AbstractIPLock):
         """Release the lock"""
         with self._instance_lock:
             if not self.acquired:
-                raise NotAcquired(f"{self.__class__.__name__}: {self.path}")
+                raise NotAcquiredError(f"{self.__class__.__name__}: {self.path}")
             self._rc -= 1
             if self._rc == 0:
                 try:
@@ -264,7 +272,7 @@ class _IPLock(AbstractIPLock):
                     raise
         try:
             self._gipl.release()
-        except NotAcquired as e:
+        except NotAcquiredError as e:
             raise OSError("The GlobalIPLock lock was already unlocked by something else") from e
 
 

@@ -9,6 +9,8 @@ from ..ansi import PureColor, RawColor, Color
 if TYPE_CHECKING:
     from logging import LogRecord
 
+__all__ = ("CuteFormatter",)
+
 
 class CuteFormatter(Formatter):
     """A log formatter that can print log messages with colors."""

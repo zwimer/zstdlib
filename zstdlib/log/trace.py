@@ -2,6 +2,8 @@ from threading import Lock
 from typing import Any
 import logging
 
+__all__ = ("install",)
+
 
 class _State:
     __init__ = NotImplemented

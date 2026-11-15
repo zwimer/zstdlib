@@ -3,6 +3,8 @@ from typing import Self, cast
 from functools import cache
 import re
 
+__all__ = ("MODIFIERS", "Color", "PureColor", "RawColor")
+
 MODIFIERS = ("bold", "dim", "italic", "underline", "blinking", "inverse", "hidden", "strikethrough")
 
 _PREFIX = "\033["
