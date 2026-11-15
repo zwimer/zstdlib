@@ -48,7 +48,7 @@ class TestSingleton(unittest.TestCase):
         self.assertIs(ST.instance(), obj)
 
         with self.assertRaises(TypeError):
-            ST.instance(4)  # type: ignore[call-arg]
+            ST.instance(4)
 
     def test_multi_thread(self) -> None:
         """Ensure that Singleton is thread safe and that constructing an object doesn't delay other threads

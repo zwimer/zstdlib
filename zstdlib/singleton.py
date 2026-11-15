@@ -1,4 +1,4 @@
-from typing import ClassVar, Never, Any
+from typing import ClassVar, Never, Any, cast
 from collections import defaultdict
 from threading import RLock
 from functools import cache
@@ -46,29 +46,22 @@ class _SingletonType(type):
                 ret = cls._instances[cls] = super().__call__(*args, **kwargs)
         return ret
 
-    @classmethod
     @cache
-    def instance(mcs, t: type[Singleton]) -> Singleton:
+    def instance[T: Singleton](cls: type[T]) -> T:
         """Get the instance of cls"""
-        if not isinstance(t, mcs):
-            raise TypeError(f"{t} is not a Singleton type")
+        # pylint: disable=protected-access
+        mcs = cast(_SingletonType, type(cls))  # mypy can't figure this out :/
         with mcs._lock:
-            cls_lock = mcs._cls_locks[t]
+            cls_lock = mcs._cls_locks[cls]
         with cls_lock:
-            if (got := mcs._instances.get(t, None)) is None:
-                raise NoInstanceError(f"No instance of {t} found")
-        return got
+            if (got := mcs._instances.get(cls, None)) is None:
+                raise NoInstanceError(f"No instance of {cls.__qualname__} found")
+        # pylint: enable=protected-access
+        return cast(T, got)
 
 
 class Singleton(metaclass=_SingletonType):
     """A thread-safe singleton base class"""
-
-    @classmethod
-    def instance(cls) -> Singleton:
-        """Blocking get the instance of cls; raise if not constructed"""
-        assert isinstance(cls, _SingletonType), "Metaclass should be _SingletonType"
-        tc: type[_SingletonType] = type(cls)
-        return tc.instance(cls)
 
     def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
         """Disallow subclassing"""

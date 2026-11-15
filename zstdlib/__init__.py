@@ -1,4 +1,4 @@
-__version__ = "0.10.9"
+__version__ = "0.10.10"
 
 from .ip_lock import AbstractIPLock, GlobalIPLock, IPLock, LockHung, LockPathInUse, NotAcquired, RIPLock
 from .keyed_instance import CircularConstruction, KeyedInstance
