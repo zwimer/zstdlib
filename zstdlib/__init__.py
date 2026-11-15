@@ -1,5 +1,6 @@
-__version__ = "0.10.7"
+__version__ = "0.10.8"
 
+from .keyed_instance import CircularConstructionError, KeyedInstance
 from .prompt import prompt_until, prompt_for, yn_prompt
 from .exc_capture import ExcCapture, ExcDelay
 from .hybridmethod import hybridmethod
@@ -11,10 +12,12 @@ from .enum import Enum, auto
 from . import macos, lazy, log, io
 
 __all__ = (
+    "CircularConstructionError",
     "Enum",
     "ExcCapture",
     "ExcDelay",
     "Freezable",
+    "KeyedInstance",
     "NotSet",
     "NotSetType",
     "Singleton",
