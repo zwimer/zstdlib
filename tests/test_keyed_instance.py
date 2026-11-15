@@ -13,7 +13,7 @@ import sys
 import os
 
 from zstdlib.keyed_instance import KeyedInstanceProcessError
-from zstdlib import CircularConstructionError, KeyedInstance
+from zstdlib import CircularConstruction, KeyedInstance
 
 
 class Nop:
@@ -53,6 +53,7 @@ def subprocess_fn(q: mp.Queue[str]) -> None:
                 p.join(1)
                 if p.is_alive():
                     p.kill()
+                    q.put("Process had to be killed")
                     raise RuntimeError("Process had to be killed")
 
     # Multiprocessing is allowed right now, these should work
@@ -128,14 +129,14 @@ class TestKeyedInstance(unittest.TestCase):
             def __init__(self, b: bool) -> None:
                 self.same = type(self)(b)  # Father is self, circle
 
-        with self.assertRaises(CircularConstructionError):
+        with self.assertRaises(CircularConstruction):
             _ = Crazy(True)
 
         class Crazy2(KeyedInstance):
             def __init__(self, b: bool) -> None:
                 self.inverse = type(self)(not b)  # Grandfather is self
 
-        with self.assertRaises(CircularConstructionError):
+        with self.assertRaises(CircularConstruction):
             _ = Crazy2(True)
 
     def test_multiproc(self) -> None:
@@ -149,6 +150,7 @@ class TestKeyedInstance(unittest.TestCase):
 
         # Run tests
         q: mp.Queue[str] = mp.Queue()
+        q.put("Start")
         p = mp.get_context("spawn").Process(target=subprocess_fn, args=(q,))
         p.start()
         p.join(10)  # This should be rather instant, this is generous
@@ -166,13 +168,13 @@ class TestKeyedInstance(unittest.TestCase):
         results: list[str] = []
         while not results or results[-1] != fin:
             results.append(q.get(timeout=3))  # Should be done nearly instantly
-        expected: list[str] = ["os.fork", "mp.fork", "mp.spawn"] * 2
+        expected: list[str] = ["Start"] + ["os.fork", "mp.fork", "mp.spawn"] * 2
         expected += ["KIPE", "KIPE", "mp.spawn", "Dead", "0", fin]
         self.assertEqual(results, expected)
 
     def test_interthread(self) -> None:
 
-        scale: int = 4  # Higher runs faster, lower is more accurate
+        scale: int = 8  # Higher runs faster, lower is more accurate
         actions: list[Action] = []
         type RV_T = C1 | C2 | Exception
 
@@ -247,8 +249,8 @@ class TestKeyedInstance(unittest.TestCase):
             "5 | Thread-1 | C1(0), next=[0, 0] - err: C2(0)",  # release C2(0)
         ]
         self.assertEqual(Action.strs(actions), expected)
-        self.assertIsInstance(fail1, CircularConstructionError)
-        self.assertIsInstance(fail2, CircularConstructionError)
+        self.assertIsInstance(fail1, CircularConstruction)
+        self.assertIsInstance(fail2, CircularConstruction)
         self.assertIsNot(fail1, fail2)
 
         # Test simultaneous construction

@@ -159,7 +159,7 @@ class _IOWrapperBase[T: (str, bytes)]:
     #
 
     def __hash__(self) -> int:
-        return hash((self.__class__, self.f))
+        return hash((type(self), self.f))
 
     __deepcopy__ = None
     __copy__ = None

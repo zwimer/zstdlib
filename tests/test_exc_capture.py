@@ -47,6 +47,12 @@ class TestLazy(unittest.TestCase):
         with non.capture(RuntimeError):
             raise RuntimeError()
         self.assertEqual(len(non.errors), 1)
+        # run_fn
+        ke = ExcCapture(KeyError)
+        self.assertEqual(ke.run_fn({0: 5}.__getitem__, 0), 5)
+        self.assertEqual(len(ke.errors), 0)
+        self.assertIs(ke.run_fn({}.__getitem__, 0), ke.NoResult)
+        self.assertEqual(len(ke.errors), 1)
 
     def test_delay(self) -> None:
         # No raise

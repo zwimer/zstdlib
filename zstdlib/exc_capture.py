@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager, contextmanager
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Self
 
 __all__ = ("ExcCapture", "ExcDelay")
@@ -10,6 +10,12 @@ type EXC_T = type[BaseException] | tuple[type[BaseException]]
 
 class ExcCapture:
     """A class that exposes a context manager which captures and suppresses any raised exception of a given type / tuple of types"""
+
+    class _NoResult:
+        """A sentinel for no result"""
+
+    type NoResultType = _NoResult
+    NoResult = _NoResult()
 
     __slots__ = ("errors", "exc_t", "previous")
 
@@ -42,6 +48,17 @@ class ExcCapture:
     def __call__(self, exc_t: EXC_T | None = None) -> AbstractContextManager[None]:
         """An alias for .capture"""
         return self.capture(exc_t)
+
+    def run_fn[T, R](self, fn: Callable[[T], R], obj: T, *, exc_t: EXC_T | None = None) -> R | NoResultType:
+        """
+        Run with self.capture(exc_t): fn(obj), return the result if found else self.NoResult
+        This can be a useful for brevity, like: map(partial(x.run_fn, fn), iterable)
+        """
+        if not callable(fn):
+            raise TypeError("fn must be callable")
+        with self.capture(exc_t):
+            return fn(obj)
+        return self.NoResult
 
 
 class ExcDelay(ExcCapture):
