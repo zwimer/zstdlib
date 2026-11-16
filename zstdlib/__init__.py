@@ -1,4 +1,4 @@
-__version__ = "0.10.12"
+__version__ = "0.10.13"
 
 from .prompt import prompt_until, prompt_for, yn_prompt
 from .ip_lock import GlobalIPLock, IPLock, RIPLock
