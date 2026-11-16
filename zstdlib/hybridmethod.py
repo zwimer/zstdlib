@@ -1,5 +1,6 @@
 from typing import Concatenate, overload
 from collections.abc import Callable
+from functools import wraps
 
 __all__ = ("hybridmethod",)
 
@@ -12,13 +13,14 @@ class hybridmethod[T, R, **P]:  # Name aligns with @staticmethod and such
     A member function decorator that combines an instances bound function and @classmethod
     If a member function uses @hybridmethod then it may use the signature:
         @hybridmethod
-        def f(self: Self | None, cls: type[Self], ...)
+        def f(self: Foo | None, cls: type[Foo], ...)
     This could be used to implement functions such as:
-        def history(self: Self | None, cls: type[Self], *, id: int | None = None): ...
+        def history(self: Foo | None, cls: type[Foo], *, id: int | None = None): ...
             ...
         A.history(id=a.id)
         A.history(id=0)
         a.history()
+    Note that using Self is the type signature is invalid, just as it is with @classmethod
     """
 
     __slots__ = ("_fn",)
@@ -39,6 +41,7 @@ class hybridmethod[T, R, **P]:  # Name aligns with @staticmethod and such
             owner = type(instance)
 
         # functools.partial doesn't preserve typing as we need it to :/
+        @wraps(self._fn)
         def ret(*args: P.args, **kwargs: P.kwargs) -> R:
             return self._fn(instance, owner, *args, **kwargs)
 
