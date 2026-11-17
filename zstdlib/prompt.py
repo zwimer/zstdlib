@@ -10,9 +10,9 @@ def prompt_until(
     msg: str,
     until: str | Iterable[str],
     *,
-    ignore_case: bool = True,
-    eof: Literal[False] = False,
-    ctrl_c: Literal[False] = False,
+    ignore_case: bool = ...,
+    eof: Literal[False] = ...,
+    ctrl_c: Literal[False] = ...,
 ) -> str: ...
 
 
@@ -21,9 +21,9 @@ def prompt_until(
     msg: str,
     until: str | Iterable[str],
     *,
-    ignore_case: bool = True,
-    eof: bool = False,
-    ctrl_c: bool = False,
+    ignore_case: bool = ...,
+    eof: bool = ...,
+    ctrl_c: bool = ...,
 ) -> str | None: ...
 
 

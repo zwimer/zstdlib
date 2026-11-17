@@ -202,11 +202,11 @@ class BinaryIO(_IOWrapperBase[bytes]):
 
 
 @overload
-def io(raw: IO[str], binary: bool | None = None) -> TextIO: ...
+def io(raw: IO[str], binary: bool | None = ...) -> TextIO: ...
 
 
 @overload
-def io(raw: IO[bytes], binary: bool | None = None) -> BinaryIO: ...
+def io(raw: IO[bytes], binary: bool | None = ...) -> BinaryIO: ...
 
 
 def io[T: (str, bytes)](raw: IO[T], binary: bool | None = None) -> TextIO | BinaryIO:
