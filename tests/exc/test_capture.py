@@ -1,14 +1,14 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import unittest
 
-from zstdlib import ExcCapture, ExcDelay
+from zstdlib.exc import Capture, Delay
 
 
 class TestLazy(unittest.TestCase):
 
     def test_capture(self) -> None:
         # Capture nothing
-        rt = ExcCapture(RuntimeError)
+        rt = Capture(RuntimeError)
         with rt.capture():
             pass
         self.assertEqual(len(rt.errors), 0)
@@ -28,7 +28,7 @@ class TestLazy(unittest.TestCase):
             raise test_err
         self.assertEqual(rt.previous, test_err)
         # capture's exc_t
-        rt = ExcCapture(RuntimeError)
+        rt = Capture(RuntimeError)
         with self.assertRaises(RuntimeError), rt.capture(ValueError):
             raise RuntimeError()
         self.assertEqual(len(rt.errors), 0)
@@ -37,7 +37,7 @@ class TestLazy(unittest.TestCase):
         self.assertEqual(len(rt.errors), 1)
         del rt
         # exc_t = None
-        non = ExcCapture()
+        non = Capture()
         with self.assertRaises(RuntimeError), non.capture(ValueError):
             raise RuntimeError()
         self.assertEqual(len(non.errors), 0)
@@ -48,7 +48,7 @@ class TestLazy(unittest.TestCase):
             raise RuntimeError()
         self.assertEqual(len(non.errors), 1)
         # run_fn
-        ke = ExcCapture(KeyError)
+        ke = Capture(KeyError)
         self.assertEqual(ke.run_fn({0: 5}.__getitem__, 0), 5)
         self.assertEqual(len(ke.errors), 0)
         self.assertIs(ke.run_fn({}.__getitem__, 0), ke.NoResult)
@@ -56,10 +56,10 @@ class TestLazy(unittest.TestCase):
 
     def test_delay(self) -> None:
         # No raise
-        with ExcDelay("msg", RuntimeError) as capture, capture():
+        with Delay("msg", RuntimeError) as capture, capture():
             pass
         # Raise
-        ed = ExcDelay("msg", RuntimeError)
+        ed = Delay("msg", RuntimeError)
         try:
             with ed as capture:
                 with capture():
@@ -72,23 +72,23 @@ class TestLazy(unittest.TestCase):
             self.assertEqual(len(grp.exceptions), 2)
             self.assertEqual(len(ed.errors), 2)
         # No block error
-        with self.assertRaises(ValueError), ExcDelay("msg", RuntimeError) as capture, capture():
+        with self.assertRaises(ValueError), Delay("msg", RuntimeError) as capture, capture():
             raise ValueError()
-        with self.assertRaises(ValueError), ExcDelay("msg", RuntimeError) as capture:
+        with self.assertRaises(ValueError), Delay("msg", RuntimeError) as capture:
             with capture():
                 raise RuntimeError()
             raise ValueError()
         # msg
-        _ = ExcDelay("")
+        _ = Delay("")
         with self.assertRaises(TypeError):
-            ExcDelay(RuntimeError)  # type: ignore[arg-type]
+            Delay(RuntimeError)  # type: ignore[arg-type]
         # armed
-        with ExcDelay("", RuntimeError, armed=False) as capture, capture():
+        with Delay("", RuntimeError, armed=False) as capture, capture():
             raise RuntimeError()
-        with ExcDelay("", RuntimeError, armed=True) as capture, capture():
+        with Delay("", RuntimeError, armed=True) as capture, capture():
             capture.armed = False
             raise RuntimeError()
-        with self.assertRaises(ExceptionGroup), ExcDelay("", RuntimeError, armed=True) as capture, capture():
+        with self.assertRaises(ExceptionGroup), Delay("", RuntimeError, armed=True) as capture, capture():
             raise RuntimeError()
 
 

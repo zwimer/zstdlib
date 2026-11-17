@@ -2,13 +2,13 @@ from contextlib import AbstractContextManager, contextmanager
 from collections.abc import Callable, Iterator
 from typing import Self
 
-__all__ = ("ExcCapture", "ExcDelay")
+__all__ = ("Capture", "Delay")
 
 
 type EXC_T = type[BaseException] | tuple[type[BaseException]]
 
 
-class ExcCapture:
+class Capture:
     """A class that exposes a context manager which captures and suppresses any raised exception of a given type / tuple of types"""
 
     # In python3.15 use sentinel
@@ -62,8 +62,8 @@ class ExcCapture:
         return self.NoResult
 
 
-class ExcDelay(ExcCapture):
-    """A context manager subclass of ExcCapture that raises on exit if errors are captured"""
+class Delay(Capture):
+    """A context manager subclass of Capture that raises on exit if errors are captured"""
 
     __slots__ = ("_msg", "armed")
 
